@@ -1,7 +1,12 @@
 import {
+  addDoc,
   collection,
+  doc,
+  getDoc,
   onSnapshot,
   query,
+  serverTimestamp,
+  updateDoc,
   where,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -40,5 +45,55 @@ export function listenToActiveHouseholdBooks(
       });
 
     callback(books);
+  });
+}
+
+export async function createHouseholdBook(
+  userId: string,
+  name: string,
+  description: string,
+) {
+  if (!name.trim()) {
+    throw new Error("Naam is verplicht.");
+  }
+
+  return addDoc(householdBooksCollection, {
+    name: name.trim(),
+    description: description.trim(),
+    ownerId: userId,
+    participantIds: [],
+    isArchived: false,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+}
+
+export async function updateHouseholdBook(
+  bookId: string,
+  userId: string,
+  name: string,
+  description: string,
+) {
+  if (!name.trim()) {
+    throw new Error("Naam is verplicht.");
+  }
+
+  const bookReference = doc(db, "householdBooks", bookId);
+  const bookSnapshot = await getDoc(bookReference);
+
+  if (!bookSnapshot.exists()) {
+    throw new Error("Huishoudboekje bestaat niet.");
+  }
+
+  const bookData = bookSnapshot.data();
+
+  if (bookData.ownerId !== userId) {
+    throw new Error("Je mag alleen je eigen huishoudboekjes aanpassen.");
+  }
+
+  return updateDoc(bookReference, {
+    name: name.trim(),
+    description: description.trim(),
+    updatedAt: serverTimestamp(),
   });
 }
