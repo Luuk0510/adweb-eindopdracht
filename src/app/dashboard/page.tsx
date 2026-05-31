@@ -1,13 +1,15 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { SubmitEvent, useEffect, useState } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { auth } from "@/lib/firebase";
 import { logout } from "@/services/authService";
 import { useHouseholdBooks } from "@/hooks/useHouseholdBooks";
 import {
+  archiveHouseholdBook,
   createHouseholdBook,
+  restoreHouseholdBook,
   updateHouseholdBook,
 } from "@/services/householdBookService";
 
@@ -22,7 +24,7 @@ export default function DashboardPage() {
   const [editingBookId, setEditingBookId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
 
-  const { books, isLoading } = useHouseholdBooks(user);
+  const { books, archivedBooks, isLoading } = useHouseholdBooks(user);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -38,7 +40,7 @@ export default function DashboardPage() {
     return () => unsubscribe();
   }, [router]);
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     setErrorMessage("");
 
@@ -63,7 +65,47 @@ export default function DashboardPage() {
     }
   }
 
-  function startEditingBook(bookId: string, bookName: string, bookDescription: string) {
+  async function handleArchiveBook(bookId: string) {
+    setErrorMessage("");
+
+    if (!user) {
+      return;
+    }
+
+    try {
+      await archiveHouseholdBook(bookId, user.uid);
+    } catch (error) {
+      if (error instanceof Error) {
+        setErrorMessage(error.message);
+      } else {
+        setErrorMessage("Er is iets misgegaan.");
+      }
+    }
+  }
+
+  async function handleRestoreBook(bookId: string) {
+    setErrorMessage("");
+
+    if (!user) {
+      return;
+    }
+
+    try {
+      await restoreHouseholdBook(bookId, user.uid);
+    } catch (error) {
+      if (error instanceof Error) {
+        setErrorMessage(error.message);
+      } else {
+        setErrorMessage("Er is iets misgegaan.");
+      }
+    }
+  }
+
+  function startEditingBook(
+    bookId: string,
+    bookName: string,
+    bookDescription: string,
+  ) {
     setEditingBookId(bookId);
     setName(bookName);
     setDescription(bookDescription);
@@ -185,18 +227,59 @@ export default function DashboardPage() {
                 {book.description || "Geen omschrijving ingevuld."}
               </p>
 
-              <button
-                className="mt-4 rounded-lg border px-3 py-2 text-sm font-medium"
-                onClick={() =>
-                  startEditingBook(book.id, book.name, book.description)
-                }
-              >
-                Aanpassen
-              </button>
+              <div className="mt-4 flex flex-wrap gap-3">
+                <button
+                  className="rounded-lg border px-3 py-2 text-sm font-medium"
+                  onClick={() =>
+                    startEditingBook(book.id, book.name, book.description)
+                  }
+                >
+                  Aanpassen
+                </button>
+
+                <button
+                  className="rounded-lg border px-3 py-2 text-sm font-medium text-red-700"
+                  onClick={() => handleArchiveBook(book.id)}
+                >
+                  Archiveren
+                </button>
+              </div>
             </article>
           ))}
         </section>
       )}
+
+      <section className="mt-10">
+        <h2 className="text-2xl font-bold">Gearchiveerde huishoudboekjes</h2>
+
+        {archivedBooks.length === 0 ? (
+          <p className="mt-3 text-sm text-gray-600">
+            Er zijn geen gearchiveerde huishoudboekjes.
+          </p>
+        ) : (
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            {archivedBooks.map((book) => (
+              <article
+                key={book.id}
+                className="rounded-xl border border-gray-200 bg-gray-50 p-5 text-gray-900"
+              >
+                <h3 className="text-xl font-semibold">{book.name}</h3>
+
+                <p className="mt-2 text-sm leading-6 text-gray-600">
+                  {book.description || "Geen omschrijving ingevuld."}
+                </p>
+
+                <button
+                  className="mt-4 rounded-lg border px-3 py-2 text-sm font-medium"
+                  onClick={() => handleRestoreBook(book.id)}
+                >
+                  Herstellen
+                </button>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
     </main>
   );
 }

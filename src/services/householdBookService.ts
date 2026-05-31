@@ -34,7 +34,39 @@ export function listenToActiveHouseholdBooks(
           name: data.name ?? "",
           description: data.description ?? "",
           ownerId: data.ownerId ?? "",
-          participantIds: data.participantIds ?? [],
+          isArchived: data.isArchived ?? false,
+          createdAt: data.createdAt?.toDate?.() ?? new Date(),
+          updatedAt: data.updatedAt?.toDate?.() ?? new Date(),
+        };
+      })
+      .sort((firstBook, secondBook) => {
+        return secondBook.createdAt.getTime() - firstBook.createdAt.getTime();
+      });
+
+    callback(books);
+  });
+}
+
+export function listenToArchivedHouseholdBooks(
+  userId: string,
+  callback: (books: HouseholdBook[]) => void,
+) {
+  const householdBooksQuery = query(
+    householdBooksCollection,
+    where("ownerId", "==", userId),
+    where("isArchived", "==", true),
+  );
+
+  return onSnapshot(householdBooksQuery, (snapshot) => {
+    const books = snapshot.docs
+      .map((document) => {
+        const data = document.data();
+
+        return {
+          id: document.id,
+          name: data.name ?? "",
+          description: data.description ?? "",
+          ownerId: data.ownerId ?? "",
           isArchived: data.isArchived ?? false,
           createdAt: data.createdAt?.toDate?.() ?? new Date(),
           updatedAt: data.updatedAt?.toDate?.() ?? new Date(),
@@ -61,9 +93,48 @@ export async function createHouseholdBook(
     name: name.trim(),
     description: description.trim(),
     ownerId: userId,
-    participantIds: [],
     isArchived: false,
     createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+}
+
+export async function archiveHouseholdBook(bookId: string, userId: string) {
+  const bookReference = doc(db, "householdBooks", bookId);
+  const bookSnapshot = await getDoc(bookReference);
+
+  if (!bookSnapshot.exists()) {
+    throw new Error("Huishoudboekje bestaat niet.");
+  }
+
+  const bookData = bookSnapshot.data();
+
+  if (bookData.ownerId !== userId) {
+    throw new Error("Je mag alleen je eigen huishoudboekjes archiveren.");
+  }
+
+  return updateDoc(bookReference, {
+    isArchived: true,
+    updatedAt: serverTimestamp(),
+  });
+}
+
+export async function restoreHouseholdBook(bookId: string, userId: string) {
+  const bookReference = doc(db, "householdBooks", bookId);
+  const bookSnapshot = await getDoc(bookReference);
+
+  if (!bookSnapshot.exists()) {
+    throw new Error("Huishoudboekje bestaat niet.");
+  }
+
+  const bookData = bookSnapshot.data();
+
+  if (bookData.ownerId !== userId) {
+    throw new Error("Je mag alleen je eigen huishoudboekjes herstellen.");
+  }
+
+  return updateDoc(bookReference, {
+    isArchived: false,
     updatedAt: serverTimestamp(),
   });
 }
