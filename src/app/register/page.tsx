@@ -1,20 +1,35 @@
 "use client";
 
-import { type SubmitEvent, useState } from "react";
+import { SubmitEvent, useState } from "react";
 import { registerWithEmail } from "@/services/authService";
 import { useRouter } from "next/navigation";
+import { FirebaseError } from "firebase/app";
 
 export default function RegisterPage() {
   const router = useRouter();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
+    setError(null); // Clear previous errors
 
-    await registerWithEmail(email, password);
-    router.push("/dashboard");
+    try {
+      await registerWithEmail(email, password);
+      router.push("/dashboard");
+    } catch (err: any) {
+      if (err instanceof FirebaseError) {
+        if (err.code === "auth/email-already-in-use") {
+          setError("Het opgegeven e-mailadres is al in gebruik.");
+        } else {
+          setError(err.message);
+        }
+      } else {
+        setError("Er is een onbekende fout opgetreden.");
+      }
+    }
   }
 
   return (
@@ -22,6 +37,12 @@ export default function RegisterPage() {
       <h1 className="mb-6 text-2xl font-bold">Account aanmaken</h1>
 
       <form onSubmit={handleSubmit} className="space-y-4">
+        {error && (
+          <div className="rounded border border-red-400 bg-red-100 p-2 text-red-700">
+            {error}
+          </div>
+        )}
+
         <div>
           <label className="block text-sm font-medium">E-mail</label>
           <input

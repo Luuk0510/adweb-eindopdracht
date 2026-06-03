@@ -2,6 +2,7 @@ import {
   addDoc,
   collection,
   doc,
+  DocumentData,
   getDoc,
   onSnapshot,
   query,
@@ -13,6 +14,21 @@ import { db } from "@/lib/firebase";
 import { HouseholdBook } from "@/types/householdBook";
 
 const householdBooksCollection = collection(db, "householdBooks");
+
+function mapHouseholdBook(
+  documentId: string,
+  data: DocumentData,
+): HouseholdBook {
+  return {
+    id: documentId,
+    name: data.name ?? "",
+    description: data.description ?? "",
+    ownerId: data.ownerId ?? "",
+    isArchived: data.isArchived ?? false,
+    createdAt: data.createdAt?.toDate?.() ?? new Date(),
+    updatedAt: data.updatedAt?.toDate?.() ?? new Date(),
+  };
+}
 
 export function listenToActiveHouseholdBooks(
   userId: string,
@@ -26,20 +42,28 @@ export function listenToActiveHouseholdBooks(
 
   return onSnapshot(householdBooksQuery, (snapshot) => {
     const books = snapshot.docs
-      .map((document) => {
-        const data = document.data();
+      .map((document) => mapHouseholdBook(document.id, document.data()))
+      .sort((firstBook, secondBook) => {
+        return secondBook.createdAt.getTime() - firstBook.createdAt.getTime();
+      });
 
-        return {
-          id: document.id,
-          name: data.name ?? "",
-          description: data.description ?? "",
-          ownerId: data.ownerId ?? "",
-          participantIds: data.participantIds ?? [],
-          isArchived: data.isArchived ?? false,
-          createdAt: data.createdAt?.toDate?.() ?? new Date(),
-          updatedAt: data.updatedAt?.toDate?.() ?? new Date(),
-        };
-      })
+    callback(books);
+  });
+}
+
+export function listenToArchivedHouseholdBooks(
+  userId: string,
+  callback: (books: HouseholdBook[]) => void,
+) {
+  const householdBooksQuery = query(
+    householdBooksCollection,
+    where("ownerId", "==", userId),
+    where("isArchived", "==", true),
+  );
+
+  return onSnapshot(householdBooksQuery, (snapshot) => {
+    const books = snapshot.docs
+      .map((document) => mapHouseholdBook(document.id, document.data()))
       .sort((firstBook, secondBook) => {
         return secondBook.createdAt.getTime() - firstBook.createdAt.getTime();
       });
@@ -61,9 +85,65 @@ export async function createHouseholdBook(
     name: name.trim(),
     description: description.trim(),
     ownerId: userId,
-    participantIds: [],
     isArchived: false,
     createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+}
+
+export async function getHouseholdBookById(bookId: string, userId: string) {
+  const bookReference = doc(db, "householdBooks", bookId);
+  const bookSnapshot = await getDoc(bookReference);
+
+  if (!bookSnapshot.exists()) {
+    return null;
+  }
+
+  const data = bookSnapshot.data();
+
+  if (data.ownerId !== userId || data.isArchived) {
+    return null;
+  }
+
+  return mapHouseholdBook(bookSnapshot.id, data);
+}
+
+export async function archiveHouseholdBook(bookId: string, userId: string) {
+  const bookReference = doc(db, "householdBooks", bookId);
+  const bookSnapshot = await getDoc(bookReference);
+
+  if (!bookSnapshot.exists()) {
+    throw new Error("Huishoudboekje bestaat niet.");
+  }
+
+  const bookData = bookSnapshot.data();
+
+  if (bookData.ownerId !== userId) {
+    throw new Error("Je mag alleen je eigen huishoudboekjes archiveren.");
+  }
+
+  return updateDoc(bookReference, {
+    isArchived: true,
+    updatedAt: serverTimestamp(),
+  });
+}
+
+export async function restoreHouseholdBook(bookId: string, userId: string) {
+  const bookReference = doc(db, "householdBooks", bookId);
+  const bookSnapshot = await getDoc(bookReference);
+
+  if (!bookSnapshot.exists()) {
+    throw new Error("Huishoudboekje bestaat niet.");
+  }
+
+  const bookData = bookSnapshot.data();
+
+  if (bookData.ownerId !== userId) {
+    throw new Error("Je mag alleen je eigen huishoudboekjes herstellen.");
+  }
+
+  return updateDoc(bookReference, {
+    isArchived: false,
     updatedAt: serverTimestamp(),
   });
 }
