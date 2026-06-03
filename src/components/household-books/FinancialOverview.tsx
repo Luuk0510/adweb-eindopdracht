@@ -11,21 +11,26 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
-import { getTransactionsByHouseholdBookId } from "@/services/householdBookService";
+import {
+  getCachedTransactions,
+  getTransactionsByHouseholdBookId,
+} from "@/services/householdBookService";
+
+import { FinancialHeader } from "@/components/household-books/FinancialHeader";
+import {
+  FinancialSummaryCards,
+  SummaryCardData,
+} from "@/components/household-books/FinancialSummaryCards";
+import { TransactionList } from "@/components/household-books/TransactionList";
+
 import { Transaction } from "@/types/transaction";
 
 type FinancialOverviewProps = {
   bookId: string;
   title: string;
   description: string;
-};
-
-type SummaryCard = {
-  label: string;
-  value: string;
-  accentClassName: string;
-  helper: string;
 };
 
 type MonthlyChartPoint = {
@@ -72,17 +77,35 @@ function getPercentage(value: number, total: number) {
   return Math.round((value / total) * 100);
 }
 
+function formatDate(date: Date) {
+  return dayFormatter.format(date);
+}
+
+function formatCurrency(amount: number) {
+  return currencyFormatter.format(amount);
+}
+
 export function FinancialOverview({
   bookId,
   title,
   description,
 }: FinancialOverviewProps) {
   const { user, isCheckingAuth } = useAuthRedirect();
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [selectedMonth, setSelectedMonth] = useState<string>("");
-  const [isLoading, setIsLoading] = useState(true);
+
+  const cachedTransactions = getCachedTransactions(bookId);
+
+  const [transactions, setTransactions] = useState<Transaction[]>(
+    cachedTransactions ?? [],
+  );
+
+  const [selectedMonth, setSelectedMonth] = useState<string>(
+    cachedTransactions?.[0]
+      ? getMonthKey(cachedTransactions[0].date)
+      : "",
+  );
+
+  const [isLoading, setIsLoading] = useState(!cachedTransactions);
   const [errorMessage, setErrorMessage] = useState("");
-  const [warningMessage, setWarningMessage] = useState("");
 
   const loadTransactions = useCallback(async () => {
     if (!user) {
@@ -91,25 +114,26 @@ export function FinancialOverview({
 
     setIsLoading(true);
     setErrorMessage("");
-    setWarningMessage("");
 
-   try {
-  const fetchedTransactions = await getTransactionsByHouseholdBookId(
-    bookId,
-    user.uid,
-  ) ?? [];
+    try {
+      const fetchedTransactions =
+        (await getTransactionsByHouseholdBookId(
+          bookId,
+          user.uid,
+        )) ?? [];
 
-  setTransactions(fetchedTransactions);
-  setSelectedMonth((currentMonth) => {
-    if (currentMonth) {
-      return currentMonth;
-    }
+      setTransactions(fetchedTransactions);
 
-    return fetchedTransactions[0]
-      ? getMonthKey(fetchedTransactions[0].date)
-      : getMonthKey(new Date());
-  });
-} catch (error) {
+      setSelectedMonth((currentMonth) => {
+        if (currentMonth) {
+          return currentMonth;
+        }
+
+        return fetchedTransactions[0]
+          ? getMonthKey(fetchedTransactions[0].date)
+          : getMonthKey(new Date());
+      });
+    } catch (error) {
       if (
         error instanceof Error &&
         error.message === "Huishoudboekje niet gevonden."
@@ -125,22 +149,18 @@ export function FinancialOverview({
   }, [bookId, user]);
 
   useEffect(() => {
-    const refreshHandle = window.setTimeout(() => {
-      void loadTransactions();
-    }, 0);
-
-    return () => window.clearTimeout(refreshHandle);
+    loadTransactions();
   }, [loadTransactions]);
 
-  const availableMonths = useMemo(() => {
-    const monthKeys = Array.from(
-      new Set(transactions.map((transaction) => getMonthKey(transaction.date))),
-    );
-
-    return monthKeys.sort((firstMonth, secondMonth) => {
-      return secondMonth.localeCompare(firstMonth);
-    });
-  }, [transactions]);
+  const availableMonths = Array.from(
+    new Set(
+      transactions.map((transaction) =>
+        getMonthKey(transaction.date),
+      ),
+    ),
+  ).sort((firstMonth, secondMonth) =>
+    secondMonth.localeCompare(firstMonth),
+  );
 
   const monthlyChartData = useMemo<MonthlyChartPoint[]>(() => {
     const totalsByMonth = new Map<
@@ -150,6 +170,7 @@ export function FinancialOverview({
 
     transactions.forEach((transaction) => {
       const monthKey = getMonthKey(transaction.date);
+
       const currentTotals = totalsByMonth.get(monthKey) ?? {
         income: 0,
         expense: 0,
@@ -165,7 +186,9 @@ export function FinancialOverview({
     });
 
     return Array.from(totalsByMonth.entries())
-      .sort(([firstMonth], [secondMonth]) => firstMonth.localeCompare(secondMonth))
+      .sort(([firstMonth], [secondMonth]) =>
+        firstMonth.localeCompare(secondMonth),
+      )
       .map(([monthKey, totals]) => ({
         monthKey,
         monthLabel: getMonthLabel(monthKey),
@@ -175,56 +198,86 @@ export function FinancialOverview({
       }));
   }, [transactions]);
 
-  const effectiveMonth = selectedMonth || availableMonths[0] || getMonthKey(new Date());
+  const effectiveMonth =
+    selectedMonth ||
+    availableMonths[0] ||
+    getMonthKey(new Date());
 
-  const monthlyTransactions = useMemo(() => {
-    return transactions
-      .filter((transaction) => getMonthKey(transaction.date) === effectiveMonth)
-      .sort((firstTransaction, secondTransaction) => {
-        return secondTransaction.date.getTime() - firstTransaction.date.getTime();
-      });
-  }, [effectiveMonth, transactions]);
+  const monthlyTransactions = transactions
+    .filter(
+      (transaction) =>
+        getMonthKey(transaction.date) === effectiveMonth,
+    )
+    .sort(
+      (firstTransaction, secondTransaction) =>
+        secondTransaction.date.getTime() -
+        firstTransaction.date.getTime(),
+    );
 
   const incomeTotal = monthlyTransactions
     .filter((transaction) => transaction.type === "income")
-    .reduce((total, transaction) => total + transaction.amount, 0);
+    .reduce(
+      (total, transaction) => total + transaction.amount,
+      0,
+    );
 
   const expenseTotal = monthlyTransactions
     .filter((transaction) => transaction.type === "expense")
-    .reduce((total, transaction) => total + transaction.amount, 0);
+    .reduce(
+      (total, transaction) => total + transaction.amount,
+      0,
+    );
 
   const balance = incomeTotal - expenseTotal;
   const totalVolume = incomeTotal + expenseTotal;
 
-  const summaryCards: SummaryCard[] = [
+  const summaryCards: SummaryCardData[] = [
     {
       label: "Inkomsten",
-      value: currencyFormatter.format(incomeTotal),
-      accentClassName: "border-emerald-200 bg-emerald-50 text-emerald-900",
-      helper: `${getPercentage(incomeTotal, totalVolume)}% van alle bewegingen`,
+      value: formatCurrency(incomeTotal),
+      accentClassName:
+        "border-emerald-200 bg-emerald-50 text-emerald-900",
+      helper: `${getPercentage(
+        incomeTotal,
+        totalVolume,
+      )}% van alle bewegingen`,
     },
     {
       label: "Uitgaven",
-      value: currencyFormatter.format(expenseTotal),
-      accentClassName: "border-rose-200 bg-rose-50 text-rose-900",
-      helper: `${getPercentage(expenseTotal, totalVolume)}% van alle bewegingen`,
+      value: formatCurrency(expenseTotal),
+      accentClassName:
+        "border-rose-200 bg-rose-50 text-rose-900",
+      helper: `${getPercentage(
+        expenseTotal,
+        totalVolume,
+      )}% van alle bewegingen`,
     },
     {
       label: "Saldo",
-      value: currencyFormatter.format(balance),
+      value: formatCurrency(balance),
       accentClassName:
         balance >= 0
           ? "border-sky-200 bg-sky-50 text-sky-900"
           : "border-amber-200 bg-amber-50 text-amber-900",
       helper:
-        balance >= 0 ? "Je houdt deze maand geld over" : "Je geeft meer uit dan er binnenkomt",
+        balance >= 0
+          ? "Je houdt deze maand geld over"
+          : "Je geeft meer uit dan er binnenkomt",
     },
   ];
 
   if (isCheckingAuth || isLoading) {
     return (
-      <section className="mt-6 rounded-[28px] border border-slate-200 bg-white p-8 shadow-sm">
-        <p className="text-sm text-slate-500">Overzicht laden...</p>
+      <section className="mt-6 rounded-4xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+        <h1 className="text-3xl font-semibold text-slate-950">
+          {title}
+        </h1>
+        <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
+          {description}
+        </p>
+        <p className="mt-6 text-sm text-slate-500">
+          Overzicht laden...
+        </p>
       </section>
     );
   }
@@ -232,7 +285,9 @@ export function FinancialOverview({
   if (errorMessage) {
     return (
       <section className="mt-6 rounded-[28px] border border-rose-200 bg-rose-50 p-8 text-rose-900 shadow-sm">
-        <h1 className="text-2xl font-semibold">Overzicht niet beschikbaar</h1>
+        <h1 className="text-2xl font-semibold">
+          Overzicht niet beschikbaar
+        </h1>
         <p className="mt-2 text-sm">{errorMessage}</p>
       </section>
     );
@@ -240,52 +295,16 @@ export function FinancialOverview({
 
   return (
     <section className="mt-6 rounded-4xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-      <div className="flex flex-col gap-5 border-b border-slate-200 pb-6 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <h1 className="text-3xl font-semibold text-slate-950">{title}</h1>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-            {description}
-          </p>
-        </div>
+      <FinancialHeader
+        title={title}
+        description={description}
+        effectiveMonth={effectiveMonth}
+        availableMonths={availableMonths}
+        getMonthLabel={getMonthLabel}
+        onMonthChange={setSelectedMonth}
+      />
 
-        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:min-w-72">
-          <label
-            className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500"
-            htmlFor="month-select"
-          >
-            Bekijk per maand
-          </label>
-          <select
-            id="month-select"
-            value={effectiveMonth}
-            onChange={(event) => setSelectedMonth(event.target.value)}
-            className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400"
-          >
-            {availableMonths.length > 0 ? (
-              availableMonths.map((month) => (
-                <option key={month} value={month}>
-                  {getMonthLabel(month)}
-                </option>
-              ))
-            ) : (
-              <option value={effectiveMonth}>{getMonthLabel(effectiveMonth)}</option>
-            )}
-          </select>
-        </div>
-      </div>
-
-      <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {summaryCards.map((card) => (
-          <article
-            key={card.label}
-            className={`rounded-2xl border p-5 shadow-sm ${card.accentClassName}`}
-          >
-            <p className="text-sm font-medium">{card.label}</p>
-            <p className="mt-3 text-3xl font-semibold">{card.value}</p>
-            <p className="mt-2 text-sm opacity-80">{card.helper}</p>
-          </article>
-        ))}
-      </div>
+      <FinancialSummaryCards cards={summaryCards} />
 
       <article className="mt-6 rounded-[28px] border border-slate-200 bg-slate-50 p-5 shadow-sm">
         <div className="flex flex-col gap-2 border-b border-slate-200 pb-4 sm:flex-row sm:items-end sm:justify-between">
@@ -294,13 +313,16 @@ export function FinancialOverview({
               Maandelijkse balansgrafiek
             </h2>
             <p className="mt-1 text-sm text-slate-600">
-              Bekijk inkomsten en uitgaven per maand als lijngrafiek.
+              Bekijk inkomsten en uitgaven per maand als
+              lijngrafiek.
             </p>
           </div>
 
           <div className="text-xs text-slate-500">
             {monthlyChartData.length > 0
-              ? `${monthlyChartData.length} maand${monthlyChartData.length === 1 ? "" : "en"}`
+              ? `${monthlyChartData.length} maand${
+                  monthlyChartData.length === 1 ? "" : "en"
+                }`
               : "Nog geen maandelijkse data"}
           </div>
         </div>
@@ -311,42 +333,40 @@ export function FinancialOverview({
               De grafiek verschijnt zodra er transacties zijn.
             </p>
             <p className="mt-2 text-sm text-slate-500">
-              Voeg inkomsten of uitgaven toe om de maandelijkse trend te zien.
+              Voeg inkomsten of uitgaven toe om de maandelijkse
+              trend te zien.
             </p>
           </div>
         ) : (
           <div className="mt-6 h-80 rounded-2xl border border-slate-200 bg-white p-4">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={monthlyChartData} margin={{ top: 10, right: 24, left: 0, bottom: 8 }}>
-                <CartesianGrid strokeDasharray="4 4" stroke="#e2e8f0" />
+              <LineChart data={monthlyChartData}>
+                <CartesianGrid
+                  strokeDasharray="4 4"
+                  stroke="#e2e8f0"
+                />
                 <XAxis
                   dataKey="monthLabel"
                   tickLine={false}
                   axisLine={false}
-                  stroke="#64748b"
                 />
                 <YAxis
                   tickLine={false}
                   axisLine={false}
-                  stroke="#64748b"
-                  tickFormatter={(value) => currencyFormatter.format(Number(value))}
+                  tickFormatter={(value) =>
+                    currencyFormatter.format(Number(value))
+                  }
                 />
                 <Tooltip
-                    formatter={(value, name) => {
-                      const rawValue = Array.isArray(value) ? value[0] : value;
-
-                      return [
-                        currencyFormatter.format(Number(rawValue ?? 0)),
-                        String(name ?? "") === "income" ? "Inkomsten" : "Uitgaven",
-                      ];
-                    }}
-                    labelFormatter={(label) => `Maand: ${label}`}
-                    contentStyle={{
-                      borderRadius: 16,
-                      borderColor: "#cbd5e1",
-                      boxShadow: "0 12px 32px rgba(15, 23, 42, 0.12)",
-                    }}
-                  />
+                  formatter={(value, name) => [
+                    currencyFormatter.format(
+                      Number(value ?? 0),
+                    ),
+                    name === "income"
+                      ? "Inkomsten"
+                      : "Uitgaven",
+                  ]}
+                />
                 <Legend />
                 <Line
                   type="monotone"
@@ -354,8 +374,6 @@ export function FinancialOverview({
                   name="Inkomsten"
                   stroke="#059669"
                   strokeWidth={3}
-                  dot={{ r: 4, strokeWidth: 2, fill: "#ffffff" }}
-                  activeDot={{ r: 6 }}
                 />
                 <Line
                   type="monotone"
@@ -363,8 +381,6 @@ export function FinancialOverview({
                   name="Uitgaven"
                   stroke="#e11d48"
                   strokeWidth={3}
-                  dot={{ r: 4, strokeWidth: 2, fill: "#ffffff" }}
-                  activeDot={{ r: 6 }}
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -372,82 +388,13 @@ export function FinancialOverview({
         )}
       </article>
 
-      {warningMessage ? (
-        <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          {warningMessage}
-        </div>
-      ) : null}
-
-      <div className="mt-6">
-        <article className="rounded-[28px] border border-slate-200 bg-slate-50 p-5 shadow-sm">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <h2 className="text-xl font-semibold text-slate-950">Uitgaven en inkomsten</h2>
-              <p className="mt-1 text-sm text-slate-600">
-                Gesorteerd op datum, nieuwste eerst.
-              </p>
-            </div>
-            <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-slate-500 shadow-sm">
-              {getMonthLabel(effectiveMonth)}
-            </span>
-          </div>
-
-          {monthlyTransactions.length === 0 ? (
-            <div className="mt-6 rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center">
-              <p className="text-base font-medium text-slate-900">
-                Er zijn nog geen transacties voor deze maand.
-              </p>
-              <p className="mt-2 text-sm text-slate-500">
-                Zodra inkomsten of uitgaven worden toegevoegd, zie je ze hier direct terug.
-              </p>
-            </div>
-          ) : (
-            <ul className="mt-6 space-y-3">
-              {monthlyTransactions.map((transaction) => {
-                const isIncome = transaction.type === "income";
-
-                return (
-                  <li
-                    key={transaction.id}
-                    className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-slate-300"
-                  >
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                      <div>
-                        <p className="text-base font-semibold text-slate-950">
-                          {transaction.title}
-                        </p>
-                        <div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-500">
-                          <span className="rounded-full bg-slate-100 px-3 py-1">
-                            {dayFormatter.format(transaction.date)}
-                          </span>
-                          <span
-                            className={`rounded-full px-3 py-1 ${
-                              isIncome
-                                ? "bg-emerald-100 text-emerald-800"
-                                : "bg-rose-100 text-rose-800"
-                            }`}
-                          >
-                            {isIncome ? "Inkomst" : "Uitgave"}
-                          </span>
-                        </div>
-                      </div>
-
-                      <p
-                        className={`text-lg font-semibold ${
-                          isIncome ? "text-emerald-700" : "text-rose-700"
-                        }`}
-                      >
-                        {isIncome ? "+" : "-"}
-                        {currencyFormatter.format(transaction.amount)}
-                      </p>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </article>
-      </div>
+      <TransactionList
+        transactions={monthlyTransactions}
+        effectiveMonth={effectiveMonth}
+        getMonthLabel={getMonthLabel}
+        formatDate={formatDate}
+        formatCurrency={formatCurrency}
+      />
     </section>
   );
 }

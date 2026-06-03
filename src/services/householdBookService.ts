@@ -20,9 +20,27 @@ import { Transaction } from "@/types/transaction";
 
 const householdBooksCollection = collection(db, "householdBooks");
 const transactionsCollection = collection(db, "transactions");
+const householdBookCache = new Map<string, HouseholdBook>();
+const transactionsCache = new Map<string, Transaction[]>();
+
+function cacheHouseholdBook(book: HouseholdBook) {
+  householdBookCache.set(book.id, book);
+}
+
+export function getCachedHouseholdBook(bookId: string) {
+  return householdBookCache.get(bookId) ?? null;
+}
+
+export function getCachedTransactions(bookId: string) {
+  return transactionsCache.get(bookId) ?? null;
+}
 
 function handleSnapshotError(error: FirestoreError) {
-  console.error(error);
+  if (error.code === "permission-denied") {
+    return;
+  }
+
+  console.error(error.message);
 }
 
 function isPermissionDeniedError(error: unknown) {
@@ -131,7 +149,10 @@ export function listenToActiveHouseholdBooks(
 
       callback(books);
     },
-    handleSnapshotError,
+    (error) => {
+      handleSnapshotError(error);
+      callback([]);
+    },
   );
 }
 
@@ -158,7 +179,10 @@ export function listenToParticipantHouseholdBooks(
 
       callback(books);
     },
-    handleSnapshotError,
+    (error) => {
+      handleSnapshotError(error);
+      callback([]);
+    },
   );
 }
 
@@ -185,7 +209,10 @@ export function listenToArchivedHouseholdBooks(
 
       callback(books);
     },
-    handleSnapshotError,
+    (error) => {
+      handleSnapshotError(error);
+      callback([]);
+    },
   );
 }
 
@@ -209,8 +236,23 @@ export async function createHouseholdBook(
   });
 }
 
-export async function getHouseholdBookById(bookId: string, userId: string) {
+export async function getHouseholdBookById(
+  bookId: string,
+  userId: string,
+) {
   try {
+    const cachedBook = householdBookCache.get(bookId);
+
+    if (cachedBook) {
+      const isParticipant =
+        cachedBook.ownerId === userId ||
+        cachedBook.participantIds.includes(userId);
+
+      if (isParticipant && !cachedBook.isArchived) {
+        return cachedBook;
+      }
+    }
+
     const bookReference = doc(db, "householdBooks", bookId);
     const bookSnapshot = await getDoc(bookReference);
 
@@ -227,7 +269,11 @@ export async function getHouseholdBookById(bookId: string, userId: string) {
       return null;
     }
 
-    return mapHouseholdBook(bookSnapshot.id, data);
+    const book = mapHouseholdBook(bookSnapshot.id, data);
+
+    cacheHouseholdBook(book);
+
+    return book;
   } catch (error) {
     const friendlyMessage = getFriendlyFirestoreErrorMessage(error);
 
@@ -244,6 +290,12 @@ export async function getTransactionsByHouseholdBookId(
   userId: string,
 ) {
   try {
+    const cachedTransactions = transactionsCache.get(bookId);
+
+    if (cachedTransactions) {
+      return cachedTransactions;
+    }
+
     const book = await getHouseholdBookById(bookId, userId);
 
     if (!book) {
@@ -257,13 +309,23 @@ export async function getTransactionsByHouseholdBookId(
 
     const snapshot = await getDocs(transactionsQuery);
 
-    return snapshot.docs
-      .map((transactionDocument: QueryDocumentSnapshot<DocumentData>) => {
-        return mapTransaction(transactionDocument.id, transactionDocument.data());
-      })
+    const transactions = snapshot.docs
+      .map((transactionDocument: QueryDocumentSnapshot<DocumentData>) =>
+        mapTransaction(
+          transactionDocument.id,
+          transactionDocument.data(),
+        ),
+      )
       .sort((firstTransaction, secondTransaction) => {
-        return secondTransaction.date.getTime() - firstTransaction.date.getTime();
+        return (
+          secondTransaction.date.getTime() -
+          firstTransaction.date.getTime()
+        );
       });
+
+    transactionsCache.set(bookId, transactions);
+
+    return transactions;
   } catch (error) {
     rethrowFriendlyFirestoreError(error);
   }
