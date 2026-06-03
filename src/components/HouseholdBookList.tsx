@@ -65,7 +65,7 @@ export function HouseholdBookList({
 
             <Link
               className="rounded-lg border px-3 py-2 text-sm font-medium"
-              href={`/household-books/${book.id}`}
+              href={`/household-books/${book.id}/transactions`}
             >
               Bekijken
             </Link>
