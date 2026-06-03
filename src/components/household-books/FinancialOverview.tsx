@@ -1,6 +1,16 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  CartesianGrid,
+  Legend,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 import { getTransactionsByHouseholdBookId } from "@/services/householdBookService";
 import { Transaction } from "@/types/transaction";
@@ -16,6 +26,14 @@ type SummaryCard = {
   value: string;
   accentClassName: string;
   helper: string;
+};
+
+type MonthlyChartPoint = {
+  monthKey: string;
+  monthLabel: string;
+  income: number;
+  expense: number;
+  balance: number;
 };
 
 const monthFormatter = new Intl.DateTimeFormat("nl-NL", {
@@ -122,6 +140,39 @@ export function FinancialOverview({
     return monthKeys.sort((firstMonth, secondMonth) => {
       return secondMonth.localeCompare(firstMonth);
     });
+  }, [transactions]);
+
+  const monthlyChartData = useMemo<MonthlyChartPoint[]>(() => {
+    const totalsByMonth = new Map<
+      string,
+      { income: number; expense: number }
+    >();
+
+    transactions.forEach((transaction) => {
+      const monthKey = getMonthKey(transaction.date);
+      const currentTotals = totalsByMonth.get(monthKey) ?? {
+        income: 0,
+        expense: 0,
+      };
+
+      if (transaction.type === "income") {
+        currentTotals.income += transaction.amount;
+      } else {
+        currentTotals.expense += transaction.amount;
+      }
+
+      totalsByMonth.set(monthKey, currentTotals);
+    });
+
+    return Array.from(totalsByMonth.entries())
+      .sort(([firstMonth], [secondMonth]) => firstMonth.localeCompare(secondMonth))
+      .map(([monthKey, totals]) => ({
+        monthKey,
+        monthLabel: getMonthLabel(monthKey),
+        income: totals.income,
+        expense: totals.expense,
+        balance: totals.income - totals.expense,
+      }));
   }, [transactions]);
 
   const effectiveMonth = selectedMonth || availableMonths[0] || getMonthKey(new Date());
@@ -235,6 +286,87 @@ export function FinancialOverview({
           </article>
         ))}
       </div>
+
+      <article className="mt-6 rounded-[28px] border border-slate-200 bg-slate-50 p-5 shadow-sm">
+        <div className="flex flex-col gap-2 border-b border-slate-200 pb-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h2 className="text-xl font-semibold text-slate-950">
+              Maandelijkse balansgrafiek
+            </h2>
+            <p className="mt-1 text-sm text-slate-600">
+              Bekijk inkomsten en uitgaven per maand als lijngrafiek.
+            </p>
+          </div>
+
+          <div className="text-xs text-slate-500">
+            {monthlyChartData.length > 0
+              ? `${monthlyChartData.length} maand${monthlyChartData.length === 1 ? "" : "en"}`
+              : "Nog geen maandelijkse data"}
+          </div>
+        </div>
+
+        {monthlyChartData.length === 0 ? (
+          <div className="mt-6 rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center">
+            <p className="text-base font-medium text-slate-900">
+              De grafiek verschijnt zodra er transacties zijn.
+            </p>
+            <p className="mt-2 text-sm text-slate-500">
+              Voeg inkomsten of uitgaven toe om de maandelijkse trend te zien.
+            </p>
+          </div>
+        ) : (
+          <div className="mt-6 h-80 rounded-2xl border border-slate-200 bg-white p-4">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={monthlyChartData} margin={{ top: 10, right: 24, left: 0, bottom: 8 }}>
+                <CartesianGrid strokeDasharray="4 4" stroke="#e2e8f0" />
+                <XAxis
+                  dataKey="monthLabel"
+                  tickLine={false}
+                  axisLine={false}
+                  stroke="#64748b"
+                />
+                <YAxis
+                  tickLine={false}
+                  axisLine={false}
+                  stroke="#64748b"
+                  tickFormatter={(value) => currencyFormatter.format(Number(value))}
+                />
+                <Tooltip
+                  formatter={(value: number, name) => [
+                    currencyFormatter.format(value),
+                    name === "income" ? "Inkomsten" : "Uitgaven",
+                  ]}
+                  labelFormatter={(label) => `Maand: ${label}`}
+                  contentStyle={{
+                    borderRadius: 16,
+                    borderColor: "#cbd5e1",
+                    boxShadow: "0 12px 32px rgba(15, 23, 42, 0.12)",
+                  }}
+                />
+                <Legend />
+                <Line
+                  type="monotone"
+                  dataKey="income"
+                  name="Inkomsten"
+                  stroke="#059669"
+                  strokeWidth={3}
+                  dot={{ r: 4, strokeWidth: 2, fill: "#ffffff" }}
+                  activeDot={{ r: 6 }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="expense"
+                  name="Uitgaven"
+                  stroke="#e11d48"
+                  strokeWidth={3}
+                  dot={{ r: 4, strokeWidth: 2, fill: "#ffffff" }}
+                  activeDot={{ r: 6 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </article>
 
       {warningMessage ? (
         <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
