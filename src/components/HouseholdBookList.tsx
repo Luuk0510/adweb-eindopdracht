@@ -82,6 +82,13 @@ export function HouseholdBookList({
               Bekijken
             </Link>
 
+            <Link
+              className="rounded-lg border px-3 py-2 text-sm font-medium"
+              href={`/household-books/${book.id}/categories`}
+            >
+              Categorieen
+            </Link>
+
             {book.ownerId === currentUserId && (
               <Link
                 className="rounded-lg border px-3 py-2 text-sm font-medium"
