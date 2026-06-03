@@ -537,9 +537,9 @@ export function FinancialOverview({
                 <dd className="mt-2">
                   <Link
                     className="inline-flex rounded-full bg-white px-4 py-2 text-sm font-medium text-slate-950 transition hover:bg-slate-200"
-                    href={`/household-books/${bookId}`}
+                    href="/dashboard"
                   >
-                    Terug naar huishoudboekje
+                    Terug naar dashboard
                   </Link>
                 </dd>
               </div>
@@ -677,9 +677,9 @@ export function FinancialOverview({
                 </Link>
                 <Link
                   className="inline-flex rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
-                  href={`/household-books/${bookId}`}
+                  href="/dashboard"
                 >
-                  Terug naar huishoudboekje
+                  Terug naar dashboard
                 </Link>
               </div>
             </div>

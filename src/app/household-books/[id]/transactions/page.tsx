@@ -14,8 +14,8 @@ export default async function TransactionsPage({
 
   return (
     <main className="mx-auto max-w-6xl p-8">
-      <Link className="text-sm underline" href={`/household-books/${id}`}>
-        Terug naar huishoudboekje
+      <Link className="text-sm underline" href="/dashboard">
+        Terug naar dashboard
       </Link>
 
       <FinancialOverview

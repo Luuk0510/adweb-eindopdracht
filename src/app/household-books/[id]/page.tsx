@@ -1,5 +1,4 @@
-import { notFound } from "next/navigation";
-import { HouseholdBookDetailClient } from "./HouseholdBookDetailClient";
+import { redirect } from "next/navigation";
 
 type HouseholdBookPageProps = {
   params: Promise<{
@@ -12,9 +11,5 @@ export default async function HouseholdBookPage({
 }: HouseholdBookPageProps) {
   const { id } = await params;
 
-  if (!id) {
-    notFound();
-  }
-
-  return <HouseholdBookDetailClient bookId={id} />;
+  redirect(`/household-books/${id}/transactions`);
 }
