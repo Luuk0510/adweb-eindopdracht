@@ -93,23 +93,23 @@ export function FinancialOverview({
     setErrorMessage("");
     setWarningMessage("");
 
-    try {
-      const fetchedTransactions = await getTransactionsByHouseholdBookId(
-        bookId,
-        user.uid,
-      );
+   try {
+  const fetchedTransactions = await getTransactionsByHouseholdBookId(
+    bookId,
+    user.uid,
+  ) ?? [];
 
-      setTransactions(fetchedTransactions);
-      setSelectedMonth((currentMonth) => {
-        if (currentMonth) {
-          return currentMonth;
-        }
+  setTransactions(fetchedTransactions);
+  setSelectedMonth((currentMonth) => {
+    if (currentMonth) {
+      return currentMonth;
+    }
 
-        return fetchedTransactions[0]
-          ? getMonthKey(fetchedTransactions[0].date)
-          : getMonthKey(new Date());
-      });
-    } catch (error) {
+    return fetchedTransactions[0]
+      ? getMonthKey(fetchedTransactions[0].date)
+      : getMonthKey(new Date());
+  });
+} catch (error) {
       if (
         error instanceof Error &&
         error.message === "Huishoudboekje niet gevonden."
@@ -332,17 +332,21 @@ export function FinancialOverview({
                   tickFormatter={(value) => currencyFormatter.format(Number(value))}
                 />
                 <Tooltip
-                  formatter={(value: number, name) => [
-                    currencyFormatter.format(value),
-                    name === "income" ? "Inkomsten" : "Uitgaven",
-                  ]}
-                  labelFormatter={(label) => `Maand: ${label}`}
-                  contentStyle={{
-                    borderRadius: 16,
-                    borderColor: "#cbd5e1",
-                    boxShadow: "0 12px 32px rgba(15, 23, 42, 0.12)",
-                  }}
-                />
+                    formatter={(value, name) => {
+                      const rawValue = Array.isArray(value) ? value[0] : value;
+
+                      return [
+                        currencyFormatter.format(Number(rawValue ?? 0)),
+                        String(name ?? "") === "income" ? "Inkomsten" : "Uitgaven",
+                      ];
+                    }}
+                    labelFormatter={(label) => `Maand: ${label}`}
+                    contentStyle={{
+                      borderRadius: 16,
+                      borderColor: "#cbd5e1",
+                      boxShadow: "0 12px 32px rgba(15, 23, 42, 0.12)",
+                    }}
+                  />
                 <Legend />
                 <Line
                   type="monotone"
