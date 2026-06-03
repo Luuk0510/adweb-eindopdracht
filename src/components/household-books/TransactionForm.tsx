@@ -1,7 +1,8 @@
 "use client";
 
 import { SubmitEvent } from "react";
-import { PrimaryButton } from "@/components/PrimaryButton";
+import { PrimaryButton } from "@/components/ui/PrimaryButton";
+import { SecondaryButton } from "@/components/ui/SecondaryButton";
 
 type TransactionFormProps = {
   title: string;
@@ -108,13 +109,13 @@ export function TransactionForm({
           </PrimaryButton>
 
           {editingTransactionId && (
-            <button
-              className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium"
+            <SecondaryButton
+              className="px-4"
               type="button"
               onClick={onCancelAction}
             >
               Annuleren
-            </button>
+            </SecondaryButton>
           )}
         </div>
       </form>

@@ -376,14 +376,6 @@ export function FinancialOverview({
       return;
     }
 
-    const shouldDelete = window.confirm(
-      "Weet je zeker dat je deze transactie wilt verwijderen?",
-    );
-
-    if (!shouldDelete) {
-      return;
-    }
-
     try {
       await deleteTransaction(transactionId, bookId, user.uid);
       await refreshTransactions();

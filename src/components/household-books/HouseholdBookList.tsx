@@ -1,6 +1,9 @@
 "use client";
 
-import Link from "next/link";
+import {
+  SecondaryButton,
+  SecondaryLink,
+} from "@/components/ui/SecondaryButton";
 import { HouseholdBook } from "@/types/householdBook";
 
 type HouseholdBookListProps = {
@@ -57,30 +60,26 @@ export function HouseholdBookList({
           <div className="mt-4 flex flex-wrap gap-3">
             {book.ownerId === currentUserId && (
               <>
-                <button
-                  className="rounded-lg border px-3 py-2 text-sm font-medium"
+                <SecondaryButton
                   onClick={() =>
                     onEditAction(book.id, book.name, book.description)
                   }
                 >
                   Aanpassen
-                </button>
+                </SecondaryButton>
 
-                <button
-                  className="rounded-lg border px-3 py-2 text-sm font-medium text-red-700"
+                <SecondaryButton
+                  variant="danger"
                   onClick={() => onArchiveAction(book.id)}
                 >
                   Archiveren
-                </button>
+                </SecondaryButton>
               </>
             )}
 
-            <Link
-              className="rounded-lg border px-3 py-2 text-sm font-medium"
-              href={`/household-books/${book.id}`}
-            >
+            <SecondaryLink href={`/household-books/${book.id}`}>
               Bekijken
-            </Link>
+            </SecondaryLink>
 
             <Link
               className="rounded-lg border px-3 py-2 text-sm font-medium"
@@ -90,12 +89,9 @@ export function HouseholdBookList({
             </Link>
 
             {book.ownerId === currentUserId && (
-              <Link
-                className="rounded-lg border px-3 py-2 text-sm font-medium"
-                href={`/household-books/${book.id}/members`}
-              >
+              <SecondaryLink href={`/household-books/${book.id}/members`}>
                 Deelnemers
-              </Link>
+              </SecondaryLink>
             )}
           </div>
         </article>

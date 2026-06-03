@@ -1,3 +1,7 @@
+"use client";
+
+import { useState } from "react";
+import { SecondaryButton } from "@/components/ui/SecondaryButton";
 import { Transaction } from "@/types/transaction";
 
 type TransactionListProps = {
@@ -19,6 +23,10 @@ export function TransactionList({
   onEditAction,
   onDeleteAction,
 }: TransactionListProps) {
+  const [transactionIdToDelete, setTransactionIdToDelete] = useState<
+    string | null
+  >(null);
+
   return (
     <div className="mt-6">
       <article className="rounded-xl border border-slate-200 bg-slate-50 p-5 shadow-sm">
@@ -50,12 +58,50 @@ export function TransactionList({
           <ul className="mt-6 space-y-3">
             {transactions.map((transaction) => {
               const isIncome = transaction.type === "income";
+              const isDeleting = transactionIdToDelete === transaction.id;
 
               return (
                 <li
                   key={transaction.id}
-                  className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-slate-300"
+                  className={`max-w-full rounded-xl border p-4 shadow-sm transition hover:border-slate-300 ${
+                    isDeleting
+                      ? "border-red-200 bg-red-50"
+                      : "border-slate-200 bg-white"
+                  }`}
                 >
+                  {isDeleting ? (
+                    <div className="min-w-0 space-y-4">
+                      <div className="min-w-0">
+                        <p className="text-base font-semibold text-red-900">
+                          Weet je zeker dat je deze transactie wilt verwijderen?
+                        </p>
+                        <p className="mt-1 break-words text-sm text-red-700">
+                          {transaction.title} wordt definitief verwijderd.
+                        </p>
+                      </div>
+
+                      <div className="flex flex-wrap justify-center gap-2">
+                        <SecondaryButton
+                          className="py-1 text-xs"
+                          type="button"
+                          onClick={() => setTransactionIdToDelete(null)}
+                        >
+                          Annuleren
+                        </SecondaryButton>
+                        <SecondaryButton
+                          className="py-1 text-xs"
+                          variant="danger"
+                          type="button"
+                          onClick={() => {
+                            onDeleteAction(transaction.id);
+                            setTransactionIdToDelete(null);
+                          }}
+                        >
+                          Ja, verwijderen
+                        </SecondaryButton>
+                      </div>
+                    </div>
+                  ) : (
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <p className="text-base font-semibold text-slate-950">
@@ -88,23 +134,27 @@ export function TransactionList({
                       </p>
 
                       <div className="flex gap-2">
-                        <button
-                          className="rounded-lg border border-slate-300 px-3 py-1 text-xs font-medium"
+                        <SecondaryButton
+                          className="py-1 text-xs"
                           type="button"
                           onClick={() => onEditAction(transaction)}
                         >
                           Aanpassen
-                        </button>
-                        <button
-                          className="rounded-lg border border-red-200 px-3 py-1 text-xs font-medium text-red-700"
+                        </SecondaryButton>
+                        <SecondaryButton
+                          className="py-1 text-xs"
+                          variant="danger"
                           type="button"
-                          onClick={() => onDeleteAction(transaction.id)}
+                          onClick={() =>
+                            setTransactionIdToDelete(transaction.id)
+                          }
                         >
                           Verwijderen
-                        </button>
+                        </SecondaryButton>
                       </div>
                     </div>
                   </div>
+                  )}
                 </li>
               );
             })}

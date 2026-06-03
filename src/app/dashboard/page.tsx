@@ -4,10 +4,10 @@ import { SubmitEvent, useState } from "react";
 import { logout } from "@/services/authService";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 import { useHouseholdBooks } from "@/hooks/useHouseholdBooks";
-import { ArchivedHouseholdBookList } from "@/components/ArchivedHouseholdBookList";
-import { HouseholdBookForm } from "@/components/HouseholdBookForm";
-import { HouseholdBookList } from "@/components/HouseholdBookList";
-import { PrimaryButton } from "@/components/PrimaryButton";
+import { ArchivedHouseholdBookList } from "@/components/household-books/ArchivedHouseholdBookList";
+import { HouseholdBookForm } from "@/components/household-books/HouseholdBookForm";
+import { HouseholdBookList } from "@/components/household-books/HouseholdBookList";
+import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import {
   archiveHouseholdBook,
   createHouseholdBook,

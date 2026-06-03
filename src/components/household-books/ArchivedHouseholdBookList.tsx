@@ -1,5 +1,6 @@
 "use client";
 
+import { SecondaryButton } from "@/components/ui/SecondaryButton";
 import { HouseholdBook } from "@/types/householdBook";
 
 type ArchivedHouseholdBookListProps = {
@@ -32,12 +33,12 @@ export function ArchivedHouseholdBookList({
                 {book.description || "Geen omschrijving ingevuld."}
               </p>
 
-              <button
-                className="mt-4 rounded-lg border px-3 py-2 text-sm font-medium"
+              <SecondaryButton
+                className="mt-4"
                 onClick={() => onRestoreAction(book.id)}
               >
                 Herstellen
-              </button>
+              </SecondaryButton>
             </article>
           ))}
         </div>

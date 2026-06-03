@@ -1,7 +1,7 @@
 "use client";
 
 import { SubmitEvent, useState } from "react";
-import { PrimaryButton } from "@/components/PrimaryButton";
+import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import { loginWithEmail } from "@/services/authService";
 import { useRouter } from "next/navigation";
 
