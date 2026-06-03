@@ -13,7 +13,6 @@ type FinancialOverviewProps = {
   bookId: string;
   title: string;
   description: string;
-  mode: "overview" | "statistics";
 };
 
 type SummaryCard = {
@@ -144,7 +143,6 @@ export function FinancialOverview({
   bookId,
   title,
   description,
-  mode,
 }: FinancialOverviewProps) {
   const { user, isCheckingAuth } = useAuthRedirect();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -283,18 +281,6 @@ export function FinancialOverview({
     null,
   );
 
-  const averageTransaction = monthlyTransactions.length
-    ? totalVolume / monthlyTransactions.length
-    : 0;
-  const transactionCount = monthlyTransactions.length;
-  const incomeCount = monthlyTransactions.filter(
-    (transaction) => transaction.type === "income",
-  ).length;
-  const expenseCount = monthlyTransactions.filter(
-    (transaction) => transaction.type === "expense",
-  ).length;
-  const recentTransactions = monthlyTransactions.slice(0, 3);
-
   const summaryCards: SummaryCard[] = [
     {
       label: "Inkomsten",
@@ -317,12 +303,6 @@ export function FinancialOverview({
           : "border-amber-200 bg-amber-50 text-amber-900",
       helper:
         balance >= 0 ? "Je houdt deze maand geld over" : "Je geeft meer uit dan er binnenkomt",
-    },
-    {
-      label: "Gemiddelde",
-      value: currencyFormatter.format(averageTransaction),
-      accentClassName: "border-slate-200 bg-slate-50 text-slate-900",
-      helper: `${monthlyTransactions.length} transacties geselecteerd`,
     },
   ];
 
@@ -404,288 +384,84 @@ export function FinancialOverview({
         </div>
       ) : null}
 
-      {mode === "overview" ? (
-        <div className="mt-6 grid gap-6 xl:grid-cols-[1.4fr_0.8fr]">
-          <article className="rounded-[28px] border border-slate-200 bg-slate-50 p-5 shadow-sm">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <h2 className="text-xl font-semibold text-slate-950">Uitgaven en inkomsten</h2>
-                <p className="mt-1 text-sm text-slate-600">
-                  Gesorteerd op datum, nieuwste eerst.
-                </p>
-              </div>
-              <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-slate-500 shadow-sm">
-                {getMonthLabel(effectiveMonth)}
-              </span>
+      <div className="mt-6">
+        <article className="rounded-[28px] border border-slate-200 bg-slate-50 p-5 shadow-sm">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-semibold text-slate-950">Uitgaven en inkomsten</h2>
+              <p className="mt-1 text-sm text-slate-600">
+                Gesorteerd op datum, nieuwste eerst.
+              </p>
             </div>
+            <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-slate-500 shadow-sm">
+              {getMonthLabel(effectiveMonth)}
+            </span>
+          </div>
 
-            {monthlyTransactions.length === 0 ? (
-              <div className="mt-6 rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center">
-                <p className="text-base font-medium text-slate-900">
-                  Er zijn nog geen transacties voor deze maand.
-                </p>
-                <p className="mt-2 text-sm text-slate-500">
-                  Zodra inkomsten of uitgaven worden toegevoegd, zie je ze hier direct terug.
-                </p>
-                <button
-                  className="mt-4 inline-flex rounded-full bg-slate-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
-                  disabled={isSeeding}
-                  onClick={handleSeedDemoData}
-                  type="button"
-                >
-                  {isSeeding ? "Demo-data laden..." : "Voeg demo-transacties toe"}
-                </button>
-              </div>
-            ) : (
-              <ul className="mt-6 space-y-3">
-                {monthlyTransactions.map((transaction) => {
-                  const isIncome = transaction.type === "income";
-
-                  return (
-                    <li
-                      key={transaction.id}
-                      className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-slate-300"
-                    >
-                      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                        <div>
-                          <p className="text-base font-semibold text-slate-950">
-                            {transaction.title}
-                          </p>
-                          <div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-500">
-                            <span className="rounded-full bg-slate-100 px-3 py-1">
-                              {dayFormatter.format(transaction.date)}
-                            </span>
-                            <span
-                              className={`rounded-full px-3 py-1 ${
-                                isIncome
-                                  ? "bg-emerald-100 text-emerald-800"
-                                  : "bg-rose-100 text-rose-800"
-                              }`}
-                            >
-                              {isIncome ? "Inkomst" : "Uitgave"}
-                            </span>
-                          </div>
-                        </div>
-
-                        <p
-                          className={`text-lg font-semibold ${
-                            isIncome ? "text-emerald-700" : "text-rose-700"
-                          }`}
-                        >
-                          {isIncome ? "+" : "-"}
-                          {currencyFormatter.format(transaction.amount)}
-                        </p>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </article>
-
-          <article className="rounded-[28px] border border-slate-200 bg-slate-950 p-5 text-white shadow-sm">
-            <h2 className="text-xl font-semibold">Snelle inzichten</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-300">
-              Meteen zichtbaar hoe deze maand zich verhoudt tussen inkomsten en uitgaven.
-            </p>
-
-            <div className="mt-6 space-y-4">
-              <div>
-                <div className="mb-2 flex items-center justify-between text-sm text-slate-300">
-                  <span>Inkomsten</span>
-                  <span>{getPercentage(incomeTotal, totalVolume)}%</span>
-                </div>
-                <div className="h-3 rounded-full bg-white/10">
-                  <div
-                    className="h-3 rounded-full bg-emerald-400"
-                    style={{ width: `${getPercentage(incomeTotal, totalVolume)}%` }}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <div className="mb-2 flex items-center justify-between text-sm text-slate-300">
-                  <span>Uitgaven</span>
-                  <span>{getPercentage(expenseTotal, totalVolume)}%</span>
-                </div>
-                <div className="h-3 rounded-full bg-white/10">
-                  <div
-                    className="h-3 rounded-full bg-rose-400"
-                    style={{ width: `${getPercentage(expenseTotal, totalVolume)}%` }}
-                  />
-                </div>
-              </div>
+          {monthlyTransactions.length === 0 ? (
+            <div className="mt-6 rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center">
+              <p className="text-base font-medium text-slate-900">
+                Er zijn nog geen transacties voor deze maand.
+              </p>
+              <p className="mt-2 text-sm text-slate-500">
+                Zodra inkomsten of uitgaven worden toegevoegd, zie je ze hier direct terug.
+              </p>
+              <button
+                className="mt-4 inline-flex rounded-full bg-slate-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+                disabled={isSeeding}
+                onClick={handleSeedDemoData}
+                type="button"
+              >
+                {isSeeding ? "Demo-data laden..." : "Voeg demo-transacties toe"}
+              </button>
             </div>
+          ) : (
+            <ul className="mt-6 space-y-3">
+              {monthlyTransactions.map((transaction) => {
+                const isIncome = transaction.type === "income";
 
-            <dl className="mt-6 space-y-4 text-sm text-slate-300">
-              <div className="rounded-2xl bg-white/5 p-4">
-                <dt className="text-slate-400">Grootste beweging</dt>
-                <dd className="mt-1 text-base font-semibold text-white">
-                  {largestTransaction
-                    ? `${largestTransaction.title} · ${currencyFormatter.format(largestTransaction.amount)}`
-                    : "Nog geen transacties"}
-                </dd>
-              </div>
-              <div className="rounded-2xl bg-white/5 p-4">
-                <dt className="text-slate-400">Maandbalans</dt>
-                <dd className="mt-1 text-base font-semibold text-white">
-                  {balance >= 0 ? "Positief" : "Negatief"}
-                </dd>
-              </div>
-              <div className="rounded-2xl bg-white/5 p-4">
-                <dt className="text-slate-400">Acties</dt>
-                <dd className="mt-2">
-                  <Link
-                    className="inline-flex rounded-full bg-white px-4 py-2 text-sm font-medium text-slate-950 transition hover:bg-slate-200"
-                    href="/dashboard"
+                return (
+                  <li
+                    key={transaction.id}
+                    className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-slate-300"
                   >
-                    Terug naar dashboard
-                  </Link>
-                </dd>
-              </div>
-            </dl>
-          </article>
-        </div>
-      ) : (
-        <div className="mt-6 grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-          <article className="rounded-[28px] border border-slate-200 bg-slate-950 p-6 text-white shadow-sm">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <h2 className="text-xl font-semibold">Statistische samenvatting</h2>
-                <p className="mt-2 text-sm leading-6 text-slate-300">
-                  Focus op verhouding, aantallen en grootste bewegingen binnen de gekozen maand.
-                </p>
-              </div>
-              <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-slate-200">
-                {getMonthLabel(effectiveMonth)}
-              </span>
-            </div>
-
-            <div className="mt-6 grid gap-4 sm:grid-cols-2">
-              <div className="rounded-2xl bg-white/5 p-4">
-                <p className="text-sm text-slate-400">Aantal transacties</p>
-                <p className="mt-2 text-3xl font-semibold text-white">{transactionCount}</p>
-              </div>
-              <div className="rounded-2xl bg-white/5 p-4">
-                <p className="text-sm text-slate-400">Maandstatus</p>
-                <p className="mt-2 text-3xl font-semibold text-white">
-                  {balance >= 0 ? "Positief" : "Negatief"}
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-6 space-y-5">
-              <div>
-                <div className="mb-2 flex items-center justify-between text-sm text-slate-300">
-                  <span>Inkomsten</span>
-                  <span>{incomeCount} transacties</span>
-                </div>
-                <div className="h-3 rounded-full bg-white/10">
-                  <div
-                    className="h-3 rounded-full bg-emerald-400"
-                    style={{ width: `${getPercentage(incomeTotal, totalVolume)}%` }}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <div className="mb-2 flex items-center justify-between text-sm text-slate-300">
-                  <span>Uitgaven</span>
-                  <span>{expenseCount} transacties</span>
-                </div>
-                <div className="h-3 rounded-full bg-white/10">
-                  <div
-                    className="h-3 rounded-full bg-rose-400"
-                    style={{ width: `${getPercentage(expenseTotal, totalVolume)}%` }}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <dl className="mt-6 grid gap-4 sm:grid-cols-2">
-              <div className="rounded-2xl bg-white/5 p-4">
-                <dt className="text-sm text-slate-400">Grootste beweging</dt>
-                <dd className="mt-2 text-base font-semibold text-white">
-                  {largestTransaction
-                    ? `${largestTransaction.title} · ${currencyFormatter.format(largestTransaction.amount)}`
-                    : "Nog geen transacties"}
-                </dd>
-              </div>
-              <div className="rounded-2xl bg-white/5 p-4">
-                <dt className="text-sm text-slate-400">Gemiddelde transactie</dt>
-                <dd className="mt-2 text-base font-semibold text-white">
-                  {currencyFormatter.format(averageTransaction)}
-                </dd>
-              </div>
-            </dl>
-          </article>
-
-          <article className="rounded-[28px] border border-slate-200 bg-slate-50 p-6 shadow-sm">
-            <h2 className="text-xl font-semibold text-slate-950">Laatste bewegingen</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-600">
-              De drie meest recente transacties van de geselecteerde maand.
-            </p>
-
-            {recentTransactions.length === 0 ? (
-              <div className="mt-6 rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center">
-                <p className="text-base font-medium text-slate-900">
-                  Nog geen transacties om statistieken op te baseren.
-                </p>
-              </div>
-            ) : (
-              <ul className="mt-6 space-y-3">
-                {recentTransactions.map((transaction) => {
-                  const isIncome = transaction.type === "income";
-
-                  return (
-                    <li
-                      key={transaction.id}
-                      className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <p className="text-base font-semibold text-slate-950">
-                            {transaction.title}
-                          </p>
-                          <p className="mt-2 text-xs text-slate-500">
-                            {dayFormatter.format(transaction.date)}
-                          </p>
-                        </div>
-                        <p
-                          className={`text-base font-semibold ${
-                            isIncome ? "text-emerald-700" : "text-rose-700"
-                          }`}
-                        >
-                          {isIncome ? "+" : "-"}
-                          {currencyFormatter.format(transaction.amount)}
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <p className="text-base font-semibold text-slate-950">
+                          {transaction.title}
                         </p>
+                        <div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-500">
+                          <span className="rounded-full bg-slate-100 px-3 py-1">
+                            {dayFormatter.format(transaction.date)}
+                          </span>
+                          <span
+                            className={`rounded-full px-3 py-1 ${
+                              isIncome
+                                ? "bg-emerald-100 text-emerald-800"
+                                : "bg-rose-100 text-rose-800"
+                            }`}
+                          >
+                            {isIncome ? "Inkomst" : "Uitgave"}
+                          </span>
+                        </div>
                       </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
 
-            <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-4">
-              <p className="text-sm text-slate-500">Navigatie</p>
-              <div className="mt-3 flex flex-wrap gap-3">
-                <Link
-                  className="inline-flex rounded-full bg-slate-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
-                  href={`/household-books/${bookId}/transactions`}
-                >
-                  Naar transacties
-                </Link>
-                <Link
-                  className="inline-flex rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
-                  href="/dashboard"
-                >
-                  Terug naar dashboard
-                </Link>
-              </div>
-            </div>
-          </article>
-        </div>
-      )}
+                      <p
+                        className={`text-lg font-semibold ${
+                          isIncome ? "text-emerald-700" : "text-rose-700"
+                        }`}
+                      >
+                        {isIncome ? "+" : "-"}
+                        {currencyFormatter.format(transaction.amount)}
+                      </p>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </article>
+      </div>
     </section>
   );
 }

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { HouseholdBookSkeleton } from "@/components/HouseholdBookSkeleton";
+import { FinancialOverview } from "@/components/household-books/FinancialOverview";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 import { getHouseholdBookById } from "@/services/householdBookService";
 import { HouseholdBook } from "@/types/householdBook";
@@ -59,7 +60,7 @@ export function HouseholdBookDetailClient({
   }
 
   return (
-    <main className="mx-auto max-w-5xl p-8">
+    <main className="mx-auto max-w-6xl p-8">
       <Link className="text-sm underline" href="/dashboard">
         Terug naar dashboard
       </Link>
@@ -70,21 +71,13 @@ export function HouseholdBookDetailClient({
         <p className="mt-4 text-sm leading-6 text-gray-600">
           {book.description || "Geen omschrijving ingevuld."}
         </p>
-
-        <div className="mt-8">
-          <Link
-            className="block rounded-2xl border border-slate-200 bg-slate-50 p-5 transition hover:border-slate-300 hover:bg-slate-100"
-            href={`/household-books/${bookId}/transactions`}
-          >
-            <h2 className="text-xl font-semibold text-slate-950">
-              Overzicht uitgaven en inkomsten
-            </h2>
-            <p className="mt-2 text-sm leading-6 text-slate-600">
-              Bekijk alle transacties op datum, filter per maand en zie de belangrijkste statistieken direct op dezelfde pagina.
-            </p>
-          </Link>
-        </div>
       </section>
+
+      <FinancialOverview
+        bookId={bookId}
+        title="Overzicht van uitgaven en inkomsten"
+        description="Bekijk je financiële bewegingen op datum, filter per maand en zie meteen welke balans je opbouwt binnen dit huishoudboekje."
+      />
     </main>
   );
 }
