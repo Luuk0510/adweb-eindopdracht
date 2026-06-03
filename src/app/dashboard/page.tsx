@@ -1,7 +1,6 @@
 "use client";
 
 import { SubmitEvent, useState } from "react";
-import { useRouter } from "next/navigation";
 import { logout } from "@/services/authService";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 import { useHouseholdBooks } from "@/hooks/useHouseholdBooks";
@@ -16,7 +15,6 @@ import {
 } from "@/services/householdBookService";
 
 export default function DashboardPage() {
-  const router = useRouter();
   const { user, isCheckingAuth } = useAuthRedirect();
 
   const [name, setName] = useState("");
@@ -107,7 +105,6 @@ export default function DashboardPage() {
 
   async function handleLogout() {
     await logout();
-    router.push("/login");
   }
 
   if (isCheckingAuth) {

@@ -20,9 +20,27 @@ import { Transaction } from "@/types/transaction";
 
 const householdBooksCollection = collection(db, "householdBooks");
 const transactionsCollection = collection(db, "transactions");
+const householdBookCache = new Map<string, HouseholdBook>();
+const transactionsCache = new Map<string, Transaction[]>();
+
+function cacheHouseholdBook(book: HouseholdBook) {
+  householdBookCache.set(book.id, book);
+}
+
+export function getCachedHouseholdBook(bookId: string) {
+  return householdBookCache.get(bookId) ?? null;
+}
+
+export function getCachedTransactions(bookId: string) {
+  return transactionsCache.get(bookId) ?? null;
+}
 
 function handleSnapshotError(error: FirestoreError) {
-  console.error(error);
+  if (error.code === "permission-denied") {
+    return;
+  }
+
+  console.error(error.message);
 }
 
 function mapHouseholdBook(
@@ -104,7 +122,10 @@ export function listenToActiveHouseholdBooks(
 
       callback(books);
     },
-    handleSnapshotError,
+    (error) => {
+      handleSnapshotError(error);
+      callback([]);
+    },
   );
 }
 
@@ -131,7 +152,10 @@ export function listenToParticipantHouseholdBooks(
 
       callback(books);
     },
-    handleSnapshotError,
+    (error) => {
+      handleSnapshotError(error);
+      callback([]);
+    },
   );
 }
 
@@ -158,7 +182,10 @@ export function listenToArchivedHouseholdBooks(
 
       callback(books);
     },
-    handleSnapshotError,
+    (error) => {
+      handleSnapshotError(error);
+      callback([]);
+    },
   );
 }
 
@@ -199,7 +226,10 @@ export async function getHouseholdBookById(bookId: string, userId: string) {
     return null;
   }
 
-  return mapHouseholdBook(bookSnapshot.id, data);
+  const book = mapHouseholdBook(bookSnapshot.id, data);
+  cacheHouseholdBook(book);
+
+  return book;
 }
 
 export async function getTransactionsByHouseholdBookId(
@@ -219,13 +249,17 @@ export async function getTransactionsByHouseholdBookId(
 
   const snapshot = await getDocs(transactionsQuery);
 
-  return snapshot.docs
+  const transactions = snapshot.docs
     .map((transactionDocument: QueryDocumentSnapshot<DocumentData>) => {
       return mapTransaction(transactionDocument.id, transactionDocument.data());
     })
     .sort((firstTransaction, secondTransaction) => {
       return secondTransaction.date.getTime() - firstTransaction.date.getTime();
     });
+
+  transactionsCache.set(bookId, transactions);
+
+  return transactions;
 }
 
 export async function archiveHouseholdBook(bookId: string, userId: string) {

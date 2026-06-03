@@ -5,7 +5,10 @@ import { useEffect, useState } from "react";
 import { HouseholdBookSkeleton } from "@/components/HouseholdBookSkeleton";
 import { FinancialOverview } from "@/components/household-books/FinancialOverview";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
-import { getHouseholdBookById } from "@/services/householdBookService";
+import {
+  getCachedHouseholdBook,
+  getHouseholdBookById,
+} from "@/services/householdBookService";
 import { HouseholdBook } from "@/types/householdBook";
 
 type HouseholdBookDetailClientProps = {
@@ -16,8 +19,9 @@ export function HouseholdBookDetailClient({
   bookId,
 }: HouseholdBookDetailClientProps) {
   const { user, isCheckingAuth } = useAuthRedirect();
-  const [book, setBook] = useState<HouseholdBook | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const cachedBook = getCachedHouseholdBook(bookId);
+  const [book, setBook] = useState<HouseholdBook | null>(cachedBook);
+  const [isLoading, setIsLoading] = useState(!cachedBook);
 
   useEffect(() => {
     async function loadBook() {
