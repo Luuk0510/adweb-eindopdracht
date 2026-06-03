@@ -1,6 +1,7 @@
 import {
   addDoc,
   collection,
+  deleteDoc,
   doc,
   DocumentData,
   FirestoreError,
@@ -25,6 +26,10 @@ const categoriesCollection = collection(db, "categories");
 const householdBookCache = new Map<string, HouseholdBook>();
 const transactionsCache = new Map<string, Transaction[]>();
 const categoriesCache = new Map<string, Category[]>();
+
+function clearCategoriesCache(bookId: string) {
+  categoriesCache.delete(bookId);
+}
 
 function cacheHouseholdBook(book: HouseholdBook) {
   householdBookCache.set(book.id, book);
@@ -384,6 +389,119 @@ export async function getCategoriesByHouseholdBookId(
   } catch (error) {
     rethrowFriendlyFirestoreError(error);
   }
+}
+
+export async function createCategory(
+  bookId: string,
+  userId: string,
+  name: string,
+  maxBudget: number,
+  endDate: Date | null,
+) {
+  if (!name.trim()) {
+    throw new Error("Categorienaam is verplicht.");
+  }
+
+  if (!Number.isFinite(maxBudget)) {
+    throw new Error("Budget is verplicht.");
+  }
+
+  if (maxBudget < 0) {
+    throw new Error("Budget mag niet negatief zijn.");
+  }
+
+  const book = await getHouseholdBookById(bookId, userId);
+
+  if (!book) {
+    throw new Error("Huishoudboekje niet gevonden.");
+  }
+
+  const categoryReference = await addDoc(categoriesCollection, {
+    bookId,
+    name: name.trim(),
+    maxBudget,
+    endDate,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+
+  clearCategoriesCache(bookId);
+
+  return categoryReference;
+}
+
+export async function updateCategory(
+  categoryId: string,
+  bookId: string,
+  userId: string,
+  name: string,
+  maxBudget: number,
+  endDate: Date | null,
+) {
+  if (!name.trim()) {
+    throw new Error("Categorienaam is verplicht.");
+  }
+
+  if (!Number.isFinite(maxBudget)) {
+    throw new Error("Budget is verplicht.");
+  }
+
+  if (maxBudget < 0) {
+    throw new Error("Budget mag niet negatief zijn.");
+  }
+
+  const book = await getHouseholdBookById(bookId, userId);
+
+  if (!book) {
+    throw new Error("Huishoudboekje niet gevonden.");
+  }
+
+  const categoryReference = doc(db, "categories", categoryId);
+  const categorySnapshot = await getDoc(categoryReference);
+
+  if (!categorySnapshot.exists()) {
+    throw new Error("Categorie bestaat niet.");
+  }
+
+  if ((categorySnapshot.data().bookId ?? "") !== bookId) {
+    throw new Error("Categorie hoort niet bij dit huishoudboekje.");
+  }
+
+  await updateDoc(categoryReference, {
+    name: name.trim(),
+    maxBudget,
+    endDate,
+    updatedAt: serverTimestamp(),
+  });
+
+  clearCategoriesCache(bookId);
+}
+
+export async function deleteCategory(
+  categoryId: string,
+  bookId: string,
+  userId: string,
+) {
+  const book = await getHouseholdBookById(bookId, userId);
+
+  if (!book) {
+    throw new Error("Huishoudboekje niet gevonden.");
+  }
+
+  const categoryReference = doc(db, "categories", categoryId);
+  const categorySnapshot = await getDoc(categoryReference);
+
+  if (!categorySnapshot.exists()) {
+    throw new Error("Categorie bestaat niet.");
+  }
+
+  if ((categorySnapshot.data().bookId ?? "") !== bookId) {
+    throw new Error("Categorie hoort niet bij dit huishoudboekje.");
+  }
+
+  await deleteDoc(categoryReference);
+
+  clearCategoriesCache(bookId);
 }
 
 export async function archiveHouseholdBook(bookId: string, userId: string) {
