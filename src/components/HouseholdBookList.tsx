@@ -6,7 +6,6 @@ import { HouseholdBook } from "@/types/householdBook";
 type HouseholdBookListProps = {
   books: HouseholdBook[];
   isLoading: boolean;
-<<<<<<< HEAD
   currentUserId: string;
   onEditAction: (
     bookId: string,
@@ -14,23 +13,14 @@ type HouseholdBookListProps = {
     bookDescription: string,
   ) => void;
   onArchiveAction: (bookId: string) => void;
-=======
-  onEdit: (bookId: string, bookName: string, bookDescription: string) => void;
-  onArchive: (bookId: string) => void;
->>>>>>> ac4b893 (remove code)
 };
 
 export function HouseholdBookList({
   books,
   isLoading,
-<<<<<<< HEAD
   currentUserId,
   onEditAction,
   onArchiveAction,
-=======
-  onEdit,
-  onArchive,
->>>>>>> ac4b893 (remove code)
 }: HouseholdBookListProps) {
   if (isLoading) {
     return (
