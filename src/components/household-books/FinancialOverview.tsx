@@ -1,12 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
-import {
-  getTransactionsByHouseholdBookId,
-  seedDemoTransactionsForHouseholdBook,
-} from "@/services/householdBookService";
+import { getTransactionsByHouseholdBookId } from "@/services/householdBookService";
 import { Transaction } from "@/types/transaction";
 
 type FinancialOverviewProps = {
@@ -58,87 +54,6 @@ function getPercentage(value: number, total: number) {
   return Math.round((value / total) * 100);
 }
 
-function createLocalDemoTransactions(bookId: string, userId: string): Transaction[] {
-  const now = new Date();
-
-  return [
-    {
-      id: "demo-salary",
-      bookId,
-      categoryId: null,
-      type: "income" as const,
-      title: "Salaris",
-      amount: 2450,
-      date: new Date(now.getFullYear(), now.getMonth(), 1),
-      createdBy: userId,
-      createdAt: now,
-      updatedAt: now,
-    },
-    {
-      id: "demo-groceries",
-      bookId,
-      categoryId: null,
-      type: "expense" as const,
-      title: "Boodschappen",
-      amount: 132.45,
-      date: new Date(now.getFullYear(), now.getMonth(), 3),
-      createdBy: userId,
-      createdAt: now,
-      updatedAt: now,
-    },
-    {
-      id: "demo-rent",
-      bookId,
-      categoryId: null,
-      type: "expense" as const,
-      title: "Huur",
-      amount: 875,
-      date: new Date(now.getFullYear(), now.getMonth(), 5),
-      createdBy: userId,
-      createdAt: now,
-      updatedAt: now,
-    },
-    {
-      id: "demo-freelance",
-      bookId,
-      categoryId: null,
-      type: "income" as const,
-      title: "Freelance opdracht",
-      amount: 420,
-      date: new Date(now.getFullYear(), now.getMonth(), 8),
-      createdBy: userId,
-      createdAt: now,
-      updatedAt: now,
-    },
-    {
-      id: "demo-energy",
-      bookId,
-      categoryId: null,
-      type: "expense" as const,
-      title: "Energie en water",
-      amount: 164.2,
-      date: new Date(now.getFullYear(), now.getMonth() - 1, 24),
-      createdBy: userId,
-      createdAt: now,
-      updatedAt: now,
-    },
-    {
-      id: "demo-dining",
-      bookId,
-      categoryId: null,
-      type: "expense" as const,
-      title: "Restaurant",
-      amount: 58.9,
-      date: new Date(now.getFullYear(), now.getMonth() - 1, 27),
-      createdBy: userId,
-      createdAt: now,
-      updatedAt: now,
-    },
-  ].sort((firstTransaction, secondTransaction) => {
-    return secondTransaction.date.getTime() - firstTransaction.date.getTime();
-  });
-}
-
 export function FinancialOverview({
   bookId,
   title,
@@ -148,10 +63,8 @@ export function FinancialOverview({
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [selectedMonth, setSelectedMonth] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
-  const [isSeeding, setIsSeeding] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [warningMessage, setWarningMessage] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
 
   const loadTransactions = useCallback(async () => {
     if (!user) {
@@ -187,9 +100,6 @@ export function FinancialOverview({
       } else {
         setTransactions([]);
         setSelectedMonth(getMonthKey(new Date()));
-        setWarningMessage(
-          "Transacties konden niet worden geladen. Je ziet nu alvast het overzicht zonder transactiedata.",
-        );
       }
     } finally {
       setIsLoading(false);
@@ -203,42 +113,6 @@ export function FinancialOverview({
 
     return () => window.clearTimeout(refreshHandle);
   }, [loadTransactions]);
-
-  async function handleSeedDemoData() {
-    if (!user) {
-      return;
-    }
-
-    setIsSeeding(true);
-    setSuccessMessage("");
-    setWarningMessage("");
-
-    try {
-      await seedDemoTransactionsForHouseholdBook(bookId, user.uid);
-      setSuccessMessage("Demo-transacties toegevoegd. Het overzicht is vernieuwd.");
-      setSelectedMonth("");
-      await loadTransactions();
-    } catch (error) {
-      if (
-        error instanceof Error &&
-        error.message.includes("Missing or insufficient permissions")
-      ) {
-        const demoTransactions = createLocalDemoTransactions(bookId, user.uid);
-
-        setTransactions(demoTransactions);
-        setSelectedMonth(getMonthKey(demoTransactions[0].date));
-        setSuccessMessage(
-          "Demo-transacties lokaal geladen. Firestore blokkert opslaan, maar je kunt de pagina nu wel testen.",
-        );
-      } else if (error instanceof Error) {
-        setWarningMessage(error.message);
-      } else {
-        setWarningMessage("Demo-data kon niet worden toegevoegd.");
-      }
-    } finally {
-      setIsSeeding(false);
-    }
-  }
 
   const availableMonths = useMemo(() => {
     const monthKeys = Array.from(
@@ -270,16 +144,6 @@ export function FinancialOverview({
 
   const balance = incomeTotal - expenseTotal;
   const totalVolume = incomeTotal + expenseTotal;
-  const largestTransaction = monthlyTransactions.reduce<Transaction | null>(
-    (largest, transaction) => {
-      if (!largest || transaction.amount > largest.amount) {
-        return transaction;
-      }
-
-      return largest;
-    },
-    null,
-  );
 
   const summaryCards: SummaryCard[] = [
     {
@@ -378,12 +242,6 @@ export function FinancialOverview({
         </div>
       ) : null}
 
-      {successMessage ? (
-        <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
-          {successMessage}
-        </div>
-      ) : null}
-
       <div className="mt-6">
         <article className="rounded-[28px] border border-slate-200 bg-slate-50 p-5 shadow-sm">
           <div className="flex items-center justify-between gap-4">
@@ -406,14 +264,6 @@ export function FinancialOverview({
               <p className="mt-2 text-sm text-slate-500">
                 Zodra inkomsten of uitgaven worden toegevoegd, zie je ze hier direct terug.
               </p>
-              <button
-                className="mt-4 inline-flex rounded-full bg-slate-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
-                disabled={isSeeding}
-                onClick={handleSeedDemoData}
-                type="button"
-              >
-                {isSeeding ? "Demo-data laden..." : "Voeg demo-transacties toe"}
-              </button>
             </div>
           ) : (
             <ul className="mt-6 space-y-3">
