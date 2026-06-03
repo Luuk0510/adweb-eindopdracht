@@ -75,6 +75,15 @@ export function HouseholdBookDetailClient({
         <p className="mt-4 text-sm leading-6 text-gray-600">
           {book.description || "Geen omschrijving ingevuld."}
         </p>
+
+        <div className="mt-4">
+          <Link
+            className="rounded-lg border px-3 py-2 text-sm font-medium"
+            href={`/household-books/${bookId}/categories`}
+          >
+            Categorie overzicht
+          </Link>
+        </div>
       </section>
 
       <FinancialOverview

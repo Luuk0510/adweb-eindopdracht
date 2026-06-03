@@ -15,13 +15,16 @@ import {
   where,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { Category } from "@/types/category";
 import { HouseholdBook } from "@/types/householdBook";
 import { Transaction } from "@/types/transaction";
 
 const householdBooksCollection = collection(db, "householdBooks");
 const transactionsCollection = collection(db, "transactions");
+const categoriesCollection = collection(db, "categories");
 const householdBookCache = new Map<string, HouseholdBook>();
 const transactionsCache = new Map<string, Transaction[]>();
+const categoriesCache = new Map<string, Category[]>();
 
 function cacheHouseholdBook(book: HouseholdBook) {
   householdBookCache.set(book.id, book);
@@ -60,7 +63,7 @@ function getFriendlyFirestoreErrorMessage(error: unknown) {
   return null;
 }
 
-function rethrowFriendlyFirestoreError(error: unknown) {
+function rethrowFriendlyFirestoreError(error: unknown): never {
   const friendlyMessage = getFriendlyFirestoreErrorMessage(error);
 
   if (friendlyMessage) {
@@ -121,6 +124,18 @@ function mapTransaction(documentId: string, data: DocumentData): Transaction {
     amount: typeof data.amount === "number" ? data.amount : 0,
     date: toDate(data.date),
     createdBy: data.createdBy ?? "",
+    createdAt: toDate(data.createdAt),
+    updatedAt: toDate(data.updatedAt),
+  };
+}
+
+function mapCategory(documentId: string, data: DocumentData): Category {
+  return {
+    id: documentId,
+    bookId: data.bookId ?? "",
+    name: data.name ?? "Onbekende categorie",
+    maxBudget: typeof data.maxBudget === "number" ? data.maxBudget : 0,
+    endDate: data.endDate ? toDate(data.endDate) : null,
     createdAt: toDate(data.createdAt),
     updatedAt: toDate(data.updatedAt),
   };
@@ -288,7 +303,7 @@ export async function getHouseholdBookById(
 export async function getTransactionsByHouseholdBookId(
   bookId: string,
   userId: string,
-) {
+): Promise<Transaction[]> {
   try {
     const cachedTransactions = transactionsCache.get(bookId);
 
@@ -326,6 +341,46 @@ export async function getTransactionsByHouseholdBookId(
     transactionsCache.set(bookId, transactions);
 
     return transactions;
+  } catch (error) {
+    rethrowFriendlyFirestoreError(error);
+  }
+}
+
+export async function getCategoriesByHouseholdBookId(
+  bookId: string,
+  userId: string,
+): Promise<Category[]> {
+  try {
+    const cachedCategories = categoriesCache.get(bookId);
+
+    if (cachedCategories) {
+      return cachedCategories;
+    }
+
+    const book = await getHouseholdBookById(bookId, userId);
+
+    if (!book) {
+      throw new Error("Huishoudboekje niet gevonden.");
+    }
+
+    const categoriesQuery = query(
+      categoriesCollection,
+      where("bookId", "==", bookId),
+    );
+
+    const snapshot = await getDocs(categoriesQuery);
+
+    const categories = snapshot.docs
+      .map((categoryDocument: QueryDocumentSnapshot<DocumentData>) =>
+        mapCategory(categoryDocument.id, categoryDocument.data()),
+      )
+      .sort((firstCategory, secondCategory) => {
+        return firstCategory.name.localeCompare(secondCategory.name);
+      });
+
+    categoriesCache.set(bookId, categories);
+
+    return categories;
   } catch (error) {
     rethrowFriendlyFirestoreError(error);
   }
