@@ -1,16 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  CartesianGrid,
-  Legend,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { useEffect, useMemo, useState } from "react";
 
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 import {
@@ -23,6 +13,10 @@ import {
   FinancialSummaryCards,
   SummaryCardData,
 } from "@/components/household-books/FinancialSummaryCards";
+import {
+  MonthlyBalanceChart,
+  MonthlyChartPoint,
+} from "@/components/household-books/MonthlyBalanceChart";
 import { TransactionList } from "@/components/household-books/TransactionList";
 
 import { Transaction } from "@/types/transaction";
@@ -31,14 +25,6 @@ type FinancialOverviewProps = {
   bookId: string;
   title: string;
   description: string;
-};
-
-type MonthlyChartPoint = {
-  monthKey: string;
-  monthLabel: string;
-  income: number;
-  expense: number;
-  balance: number;
 };
 
 const monthFormatter = new Intl.DateTimeFormat("nl-NL", {
@@ -107,50 +93,65 @@ export function FinancialOverview({
   const [isLoading, setIsLoading] = useState(!cachedTransactions);
   const [errorMessage, setErrorMessage] = useState("");
 
-  const loadTransactions = useCallback(async () => {
+  useEffect(() => {
     if (!user) {
       return;
     }
 
-    setIsLoading(true);
-    setErrorMessage("");
+    const userId = user.uid;
+    let isMounted = true;
 
-    try {
-      const fetchedTransactions =
-        (await getTransactionsByHouseholdBookId(
-          bookId,
-          user.uid,
-        )) ?? [];
+    async function loadTransactions() {
+      try {
+        const fetchedTransactions =
+          (await getTransactionsByHouseholdBookId(
+            bookId,
+            userId,
+          )) ?? [];
 
-      setTransactions(fetchedTransactions);
-
-      setSelectedMonth((currentMonth) => {
-        if (currentMonth) {
-          return currentMonth;
+        if (!isMounted) {
+          return;
         }
 
-        return fetchedTransactions[0]
-          ? getMonthKey(fetchedTransactions[0].date)
-          : getMonthKey(new Date());
-      });
-    } catch (error) {
-      if (
-        error instanceof Error &&
-        error.message === "Huishoudboekje niet gevonden."
-      ) {
-        setErrorMessage(error.message);
-      } else {
-        setTransactions([]);
-        setSelectedMonth(getMonthKey(new Date()));
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  }, [bookId, user]);
+        setErrorMessage("");
+        setTransactions(fetchedTransactions);
 
-  useEffect(() => {
-    loadTransactions();
-  }, [loadTransactions]);
+        setSelectedMonth((currentMonth) => {
+          if (currentMonth) {
+            return currentMonth;
+          }
+
+          return fetchedTransactions[0]
+            ? getMonthKey(fetchedTransactions[0].date)
+            : getMonthKey(new Date());
+        });
+      } catch (error) {
+        if (!isMounted) {
+          return;
+        }
+
+        if (
+          error instanceof Error &&
+          error.message === "Huishoudboekje niet gevonden."
+        ) {
+          setErrorMessage(error.message);
+        } else {
+          setTransactions([]);
+          setSelectedMonth(getMonthKey(new Date()));
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    void loadTransactions();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [bookId, user]);
 
   const availableMonths = Array.from(
     new Set(
@@ -306,87 +307,10 @@ export function FinancialOverview({
 
       <FinancialSummaryCards cards={summaryCards} />
 
-      <article className="mt-6 rounded-[28px] border border-slate-200 bg-slate-50 p-5 shadow-sm">
-        <div className="flex flex-col gap-2 border-b border-slate-200 pb-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h2 className="text-xl font-semibold text-slate-950">
-              Maandelijkse balansgrafiek
-            </h2>
-            <p className="mt-1 text-sm text-slate-600">
-              Bekijk inkomsten en uitgaven per maand als
-              lijngrafiek.
-            </p>
-          </div>
-
-          <div className="text-xs text-slate-500">
-            {monthlyChartData.length > 0
-              ? `${monthlyChartData.length} maand${
-                  monthlyChartData.length === 1 ? "" : "en"
-                }`
-              : "Nog geen maandelijkse data"}
-          </div>
-        </div>
-
-        {monthlyChartData.length === 0 ? (
-          <div className="mt-6 rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center">
-            <p className="text-base font-medium text-slate-900">
-              De grafiek verschijnt zodra er transacties zijn.
-            </p>
-            <p className="mt-2 text-sm text-slate-500">
-              Voeg inkomsten of uitgaven toe om de maandelijkse
-              trend te zien.
-            </p>
-          </div>
-        ) : (
-          <div className="mt-6 h-80 rounded-2xl border border-slate-200 bg-white p-4">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={monthlyChartData}>
-                <CartesianGrid
-                  strokeDasharray="4 4"
-                  stroke="#e2e8f0"
-                />
-                <XAxis
-                  dataKey="monthLabel"
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <YAxis
-                  tickLine={false}
-                  axisLine={false}
-                  tickFormatter={(value) =>
-                    currencyFormatter.format(Number(value))
-                  }
-                />
-                <Tooltip
-                  formatter={(value, name) => [
-                    currencyFormatter.format(
-                      Number(value ?? 0),
-                    ),
-                    name === "income"
-                      ? "Inkomsten"
-                      : "Uitgaven",
-                  ]}
-                />
-                <Legend />
-                <Line
-                  type="monotone"
-                  dataKey="income"
-                  name="Inkomsten"
-                  stroke="#059669"
-                  strokeWidth={3}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="expense"
-                  name="Uitgaven"
-                  stroke="#e11d48"
-                  strokeWidth={3}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        )}
-      </article>
+      <MonthlyBalanceChart
+        monthlyChartData={monthlyChartData}
+        formatCurrency={formatCurrency}
+      />
 
       <TransactionList
         transactions={monthlyTransactions}
