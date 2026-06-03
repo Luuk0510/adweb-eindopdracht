@@ -3,8 +3,8 @@ import { HouseholdBookNotAvailable } from "@/components/HouseholdBookNotAvailabl
 export default function NotFoundPage() {
   return (
     <HouseholdBookNotAvailable
-      title="Huishoudboekje niet gevonden"
-      message="Dit huishoudboekje bestaat niet of is niet beschikbaar."
+      title="Deelnemers niet beschikbaar"
+      message="Alleen de eigenaar kan deelnemers beheren."
     />
   );
 }

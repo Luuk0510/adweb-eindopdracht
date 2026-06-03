@@ -4,12 +4,12 @@ import { HouseholdBook } from "@/types/householdBook";
 
 type ArchivedHouseholdBookListProps = {
   archivedBooks: HouseholdBook[];
-  onRestore: (bookId: string) => void;
+  onRestoreAction: (bookId: string) => void;
 };
 
 export function ArchivedHouseholdBookList({
   archivedBooks,
-  onRestore,
+  onRestoreAction,
 }: ArchivedHouseholdBookListProps) {
   return (
     <section className="mt-10">
@@ -34,7 +34,7 @@ export function ArchivedHouseholdBookList({
 
               <button
                 className="mt-4 rounded-lg border px-3 py-2 text-sm font-medium"
-                onClick={() => onRestore(book.id)}
+                onClick={() => onRestoreAction(book.id)}
               >
                 Herstellen
               </button>

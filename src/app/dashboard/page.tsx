@@ -150,13 +150,14 @@ export default function DashboardPage() {
       <HouseholdBookList
         books={books}
         isLoading={isLoading}
-        onEdit={startEditingBook}
-        onArchive={handleArchiveBook}
+        currentUserId={user?.uid ?? ""}
+        onEditAction={startEditingBook}
+        onArchiveAction={handleArchiveBook}
       />
 
       <ArchivedHouseholdBookList
         archivedBooks={archivedBooks}
-        onRestore={handleRestoreBook}
+        onRestoreAction={handleRestoreBook}
       />
     </main>
   );
