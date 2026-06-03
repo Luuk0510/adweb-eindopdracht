@@ -6,6 +6,8 @@ type TransactionListProps = {
   getMonthLabel: (monthKey: string) => string;
   formatDate: (date: Date) => string;
   formatCurrency: (amount: number) => string;
+  onEditAction: (transaction: Transaction) => void;
+  onDeleteAction: (transactionId: string) => void;
 };
 
 export function TransactionList({
@@ -14,10 +16,12 @@ export function TransactionList({
   getMonthLabel,
   formatDate,
   formatCurrency,
+  onEditAction,
+  onDeleteAction,
 }: TransactionListProps) {
   return (
     <div className="mt-6">
-      <article className="rounded-[28px] border border-slate-200 bg-slate-50 p-5 shadow-sm">
+      <article className="rounded-xl border border-slate-200 bg-slate-50 p-5 shadow-sm">
         <div className="flex items-center justify-between gap-4">
           <div>
             <h2 className="text-xl font-semibold text-slate-950">
@@ -33,7 +37,7 @@ export function TransactionList({
         </div>
 
         {transactions.length === 0 ? (
-          <div className="mt-6 rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center">
+          <div className="mt-6 rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center">
             <p className="text-base font-medium text-slate-900">
               Er zijn nog geen transacties voor deze maand.
             </p>
@@ -50,7 +54,7 @@ export function TransactionList({
               return (
                 <li
                   key={transaction.id}
-                  className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-slate-300"
+                  className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-slate-300"
                 >
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
@@ -73,14 +77,33 @@ export function TransactionList({
                       </div>
                     </div>
 
-                    <p
-                      className={`text-lg font-semibold ${
-                        isIncome ? "text-emerald-700" : "text-rose-700"
-                      }`}
-                    >
-                      {isIncome ? "+" : "-"}
-                      {formatCurrency(transaction.amount)}
-                    </p>
+                    <div className="flex flex-col gap-3 sm:items-end">
+                      <p
+                        className={`text-lg font-semibold ${
+                          isIncome ? "text-emerald-700" : "text-rose-700"
+                        }`}
+                      >
+                        {isIncome ? "+" : "-"}
+                        {formatCurrency(transaction.amount)}
+                      </p>
+
+                      <div className="flex gap-2">
+                        <button
+                          className="rounded-lg border border-slate-300 px-3 py-1 text-xs font-medium"
+                          type="button"
+                          onClick={() => onEditAction(transaction)}
+                        >
+                          Aanpassen
+                        </button>
+                        <button
+                          className="rounded-lg border border-red-200 px-3 py-1 text-xs font-medium text-red-700"
+                          type="button"
+                          onClick={() => onDeleteAction(transaction.id)}
+                        >
+                          Verwijderen
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </li>
               );

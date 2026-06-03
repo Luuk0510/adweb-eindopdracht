@@ -4,6 +4,7 @@ import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { HouseholdBookNotAvailable } from "@/components/HouseholdBookNotAvailable";
 import { HouseholdBookSkeleton } from "@/components/HouseholdBookSkeleton";
+import { PrimaryButton } from "@/components/PrimaryButton";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 import {
   addHouseholdBookParticipant,
@@ -110,12 +111,9 @@ export function HouseholdBookMembersClient({
             </p>
           )}
 
-          <button
-            className="rounded-lg bg-black px-4 py-2 text-sm font-medium text-white"
-            type="submit"
-          >
+          <PrimaryButton type="submit">
             Deelnemer toevoegen
-          </button>
+          </PrimaryButton>
         </form>
 
         <div className="mt-6">

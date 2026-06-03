@@ -22,7 +22,8 @@ service cloud.firestore {
     }
 
     function canAccessBook(bookId) {
-      return isBookOwner(bookId) || isBookParticipant(bookId);
+      return (isBookOwner(bookId) || isBookParticipant(bookId))
+        && bookDoc(bookId).data.isArchived == false;
     }
 
     match /householdBooks/{bookId} {
@@ -39,7 +40,7 @@ service cloud.firestore {
 
       allow read: if isOwner() || isParticipant();
 
-      allow create: if request.auth != null
+      allow create: if isAuthenticated()
         && request.resource.data.ownerId == request.auth.uid
         && request.resource.data.participantIds is list
         && request.resource.data.participantIds.size() == 0
@@ -59,11 +60,22 @@ service cloud.firestore {
       allow create: if isAuthenticated()
         && request.resource.data.bookId is string
         && isBookOwner(request.resource.data.bookId)
+        && bookDoc(request.resource.data.bookId).data.isArchived == false
         && request.resource.data.name is string
         && request.resource.data.name.size() > 0
-        && request.resource.data.maxBudget is number;
+        && request.resource.data.maxBudget is number
+        && request.resource.data.maxBudget >= 0;
 
-      allow update, delete: if isBookOwner(resource.data.bookId);
+      allow update: if isBookOwner(resource.data.bookId)
+        && bookDoc(resource.data.bookId).data.isArchived == false
+        && request.resource.data.bookId == resource.data.bookId
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.maxBudget is number
+        && request.resource.data.maxBudget >= 0;
+
+      allow delete: if isBookOwner(resource.data.bookId)
+        && bookDoc(resource.data.bookId).data.isArchived == false;
     }
 
     match /transactions/{transactionId} {
@@ -72,10 +84,19 @@ service cloud.firestore {
       allow create: if isAuthenticated()
         && request.resource.data.bookId is string
         && canAccessBook(request.resource.data.bookId)
+        && request.resource.data.createdBy == request.auth.uid
         && request.resource.data.amount is number
-        && request.resource.data.type in ["income", "expense"];
+        && request.resource.data.amount > 0
+        && request.resource.data.type in ["expense", "income"];
 
-      allow update, delete: if isBookOwner(resource.data.bookId);
+      allow update: if canAccessBook(resource.data.bookId)
+        && request.resource.data.bookId == resource.data.bookId
+        && request.resource.data.createdBy == resource.data.createdBy
+        && request.resource.data.amount is number
+        && request.resource.data.amount > 0
+        && request.resource.data.type in ["expense", "income"];
+
+      allow delete: if canAccessBook(resource.data.bookId);
     }
   }
 }

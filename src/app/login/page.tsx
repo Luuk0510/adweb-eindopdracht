@@ -1,6 +1,7 @@
 "use client";
 
 import { SubmitEvent, useState } from "react";
+import { PrimaryButton } from "@/components/PrimaryButton";
 import { loginWithEmail } from "@/services/authService";
 import { useRouter } from "next/navigation";
 
@@ -60,12 +61,9 @@ export default function LoginPage() {
             />
           </div>
 
-          <button
-            className="w-full rounded-lg bg-black px-4 py-2 text-sm font-medium text-white"
-            type="submit"
-          >
+          <PrimaryButton className="w-full" type="submit">
             Inloggen
-          </button>
+          </PrimaryButton>
         </form>
       </section>
     </main>

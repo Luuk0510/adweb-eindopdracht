@@ -1,6 +1,7 @@
 "use client";
 
 import { SubmitEvent } from "react";
+import { PrimaryButton } from "@/components/PrimaryButton";
 
 type HouseholdBookFormProps = {
   name: string;
@@ -57,12 +58,9 @@ export function HouseholdBookForm({
         )}
 
         <div className="flex gap-3">
-          <button
-            className="rounded-lg bg-black px-4 py-2 text-sm font-medium text-white"
-            type="submit"
-          >
+          <PrimaryButton type="submit">
             {editingBookId ? "Wijzigingen opslaan" : "Toevoegen"}
-          </button>
+          </PrimaryButton>
 
           {editingBookId && (
             <button

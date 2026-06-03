@@ -7,6 +7,7 @@ import { useHouseholdBooks } from "@/hooks/useHouseholdBooks";
 import { ArchivedHouseholdBookList } from "@/components/ArchivedHouseholdBookList";
 import { HouseholdBookForm } from "@/components/HouseholdBookForm";
 import { HouseholdBookList } from "@/components/HouseholdBookList";
+import { PrimaryButton } from "@/components/PrimaryButton";
 import {
   archiveHouseholdBook,
   createHouseholdBook,
@@ -125,12 +126,9 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        <button
-          className="rounded-lg bg-black px-4 py-2 text-sm font-medium text-white"
-          onClick={handleLogout}
-        >
+        <PrimaryButton onClick={handleLogout}>
           Uitloggen
-        </button>
+        </PrimaryButton>
       </section>
 
       <HouseholdBookForm

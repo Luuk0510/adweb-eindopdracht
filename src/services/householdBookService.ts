@@ -43,6 +43,10 @@ export function getCachedTransactions(bookId: string) {
   return transactionsCache.get(bookId) ?? null;
 }
 
+function clearTransactionsCache(bookId: string) {
+  transactionsCache.delete(bookId);
+}
+
 function handleSnapshotError(error: FirestoreError) {
   if (error.code === "permission-denied") {
     return;
@@ -391,6 +395,13 @@ export async function getCategoriesByHouseholdBookId(
   }
 }
 
+type TransactionInput = {
+  title: string;
+  amount: number;
+  type: "expense" | "income";
+  date: Date;
+};
+
 export async function createCategory(
   bookId: string,
   userId: string,
@@ -416,6 +427,10 @@ export async function createCategory(
     throw new Error("Huishoudboekje niet gevonden.");
   }
 
+  if (book.ownerId !== userId) {
+    throw new Error("Alleen de eigenaar mag categorieën toevoegen.");
+  }
+
   const categoryReference = await addDoc(categoriesCollection, {
     bookId,
     name: name.trim(),
@@ -428,6 +443,38 @@ export async function createCategory(
   clearCategoriesCache(bookId);
 
   return categoryReference;
+}
+
+export async function createTransaction(
+  bookId: string,
+  userId: string,
+  transaction: TransactionInput,
+) {
+  const book = await getHouseholdBookById(bookId, userId);
+
+  if (!book) {
+    throw new Error("Huishoudboekje niet gevonden.");
+  }
+
+  if (transaction.amount <= 0) {
+    throw new Error("Kosten zijn verplicht.");
+  }
+
+  const newTransaction = await addDoc(transactionsCollection, {
+    bookId,
+    categoryId: null,
+    type: transaction.type,
+    title: transaction.title.trim() || "Geen titel",
+    amount: transaction.amount,
+    date: transaction.date,
+    createdBy: userId,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+
+  clearTransactionsCache(bookId);
+
+  return newTransaction;
 }
 
 export async function updateCategory(
@@ -456,6 +503,10 @@ export async function updateCategory(
     throw new Error("Huishoudboekje niet gevonden.");
   }
 
+  if (book.ownerId !== userId) {
+    throw new Error("Alleen de eigenaar mag categorieën aanpassen.");
+  }
+
   const categoryReference = doc(db, "categories", categoryId);
   const categorySnapshot = await getDoc(categoryReference);
 
@@ -477,6 +528,44 @@ export async function updateCategory(
   clearCategoriesCache(bookId);
 }
 
+export async function updateTransaction(
+  transactionId: string,
+  bookId: string,
+  userId: string,
+  transaction: TransactionInput,
+) {
+  const book = await getHouseholdBookById(bookId, userId);
+
+  if (!book) {
+    throw new Error("Huishoudboekje niet gevonden.");
+  }
+
+  if (transaction.amount <= 0) {
+    throw new Error("Kosten zijn verplicht.");
+  }
+
+  const transactionReference = doc(db, "transactions", transactionId);
+  const transactionSnapshot = await getDoc(transactionReference);
+
+  if (!transactionSnapshot.exists()) {
+    throw new Error("Transactie bestaat niet.");
+  }
+
+  if (transactionSnapshot.data().bookId !== bookId) {
+    throw new Error("Deze transactie hoort niet bij dit huishoudboekje.");
+  }
+
+  await updateDoc(transactionReference, {
+    type: transaction.type,
+    title: transaction.title.trim() || "Geen titel",
+    amount: transaction.amount,
+    date: transaction.date,
+    updatedAt: serverTimestamp(),
+  });
+
+  clearTransactionsCache(bookId);
+}
+
 export async function deleteCategory(
   categoryId: string,
   bookId: string,
@@ -486,6 +575,10 @@ export async function deleteCategory(
 
   if (!book) {
     throw new Error("Huishoudboekje niet gevonden.");
+  }
+
+  if (book.ownerId !== userId) {
+    throw new Error("Alleen de eigenaar mag categorieën verwijderen.");
   }
 
   const categoryReference = doc(db, "categories", categoryId);
@@ -502,6 +595,33 @@ export async function deleteCategory(
   await deleteDoc(categoryReference);
 
   clearCategoriesCache(bookId);
+}
+
+export async function deleteTransaction(
+  transactionId: string,
+  bookId: string,
+  userId: string,
+) {
+  const book = await getHouseholdBookById(bookId, userId);
+
+  if (!book) {
+    throw new Error("Huishoudboekje niet gevonden.");
+  }
+
+  const transactionReference = doc(db, "transactions", transactionId);
+  const transactionSnapshot = await getDoc(transactionReference);
+
+  if (!transactionSnapshot.exists()) {
+    throw new Error("Transactie bestaat niet.");
+  }
+
+  if (transactionSnapshot.data().bookId !== bookId) {
+    throw new Error("Deze transactie hoort niet bij dit huishoudboekje.");
+  }
+
+  await deleteDoc(transactionReference);
+
+  clearTransactionsCache(bookId);
 }
 
 export async function archiveHouseholdBook(bookId: string, userId: string) {

@@ -24,7 +24,7 @@ export function FinancialHeader({
         </p>
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:min-w-72">
+      <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 sm:min-w-72">
         <label
           className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500"
           htmlFor="month-select"
@@ -35,7 +35,7 @@ export function FinancialHeader({
           id="month-select"
           value={effectiveMonth}
           onChange={(event) => onMonthChange(event.target.value)}
-          className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400"
+          className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400"
         >
           {availableMonths.length > 0 ? (
             availableMonths.map((month) => (

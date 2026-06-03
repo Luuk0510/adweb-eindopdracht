@@ -29,7 +29,7 @@ export function MonthlyBalanceChart({
   formatCurrency,
 }: MonthlyBalanceChartProps) {
   return (
-    <article className="mt-6 rounded-[28px] border border-slate-200 bg-slate-50 p-5 shadow-sm">
+    <article className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-5 shadow-sm">
       <div className="flex flex-col gap-2 border-b border-slate-200 pb-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h2 className="text-xl font-semibold text-slate-950">
@@ -50,7 +50,7 @@ export function MonthlyBalanceChart({
       </div>
 
       {monthlyChartData.length === 0 ? (
-        <div className="mt-6 rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center">
+        <div className="mt-6 rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center">
           <p className="text-base font-medium text-slate-900">
             De grafiek verschijnt zodra er transacties zijn.
           </p>
@@ -60,7 +60,7 @@ export function MonthlyBalanceChart({
           </p>
         </div>
       ) : (
-        <div className="mt-6 h-80 rounded-2xl border border-slate-200 bg-white p-4">
+        <div className="mt-6 h-80 rounded-xl border border-slate-200 bg-white p-4">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={monthlyChartData}>
               <CartesianGrid
