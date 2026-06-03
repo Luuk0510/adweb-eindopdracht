@@ -14,7 +14,7 @@ type HouseholdBookDetailClientProps = {
 export function HouseholdBookDetailClient({
   bookId,
 }: HouseholdBookDetailClientProps) {
-  const { user } = useAuthRedirect();
+  const { user, isCheckingAuth } = useAuthRedirect();
   const [book, setBook] = useState<HouseholdBook | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -24,16 +24,20 @@ export function HouseholdBookDetailClient({
         return;
       }
 
-      const foundBook = await getHouseholdBookById(bookId, user.uid);
-
-      setBook(foundBook);
-      setIsLoading(false);
+      try {
+        const foundBook = await getHouseholdBookById(bookId, user.uid);
+        setBook(foundBook);
+      } catch {
+        setBook(null);
+      } finally {
+        setIsLoading(false);
+      }
     }
 
     loadBook();
   }, [bookId, user]);
 
-  if (isLoading) {
+  if (isCheckingAuth || isLoading) {
     return <HouseholdBookSkeleton />;
   }
 
