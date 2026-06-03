@@ -19,7 +19,7 @@ export default function RegisterPage() {
     try {
       await registerWithEmail(email, password);
       router.push("/dashboard");
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (err instanceof FirebaseError) {
         if (err.code === "auth/email-already-in-use") {
           setError("Het opgegeven e-mailadres is al in gebruik.");

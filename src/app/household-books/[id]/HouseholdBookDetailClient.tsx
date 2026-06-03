@@ -70,6 +70,20 @@ export function HouseholdBookDetailClient({
         <p className="mt-4 text-sm leading-6 text-gray-600">
           {book.description || "Geen omschrijving ingevuld."}
         </p>
+
+        <div className="mt-8">
+          <Link
+            className="block rounded-2xl border border-slate-200 bg-slate-50 p-5 transition hover:border-slate-300 hover:bg-slate-100"
+            href={`/household-books/${bookId}/transactions`}
+          >
+            <h2 className="text-xl font-semibold text-slate-950">
+              Overzicht uitgaven en inkomsten
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              Bekijk alle transacties op datum, filter per maand en zie de belangrijkste statistieken direct op dezelfde pagina.
+            </p>
+          </Link>
+        </div>
       </section>
     </main>
   );
