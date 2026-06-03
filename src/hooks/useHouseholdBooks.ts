@@ -6,10 +6,12 @@ import { HouseholdBook } from "@/types/householdBook";
 import {
   listenToActiveHouseholdBooks,
   listenToArchivedHouseholdBooks,
+  listenToParticipantHouseholdBooks,
 } from "@/services/householdBookService";
 
 export function useHouseholdBooks(user: User | null) {
-  const [books, setBooks] = useState<HouseholdBook[]>([]);
+  const [ownerBooks, setOwnerBooks] = useState<HouseholdBook[]>([]);
+  const [participantBooks, setParticipantBooks] = useState<HouseholdBook[]>([]);
   const [archivedBooks, setArchivedBooks] = useState<HouseholdBook[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -21,7 +23,7 @@ export function useHouseholdBooks(user: User | null) {
     const unsubscribeActiveBooks = listenToActiveHouseholdBooks(
       user.uid,
       (newBooks) => {
-        setBooks(newBooks);
+        setOwnerBooks(newBooks);
         setIsLoading(false);
       },
     );
@@ -33,9 +35,17 @@ export function useHouseholdBooks(user: User | null) {
       },
     );
 
+    const unsubscribeParticipantBooks = listenToParticipantHouseholdBooks(
+      user.uid,
+      (participantBooks) => {
+        setParticipantBooks(participantBooks);
+      },
+    );
+
     return () => {
       unsubscribeActiveBooks();
       unsubscribeArchivedBooks();
+      unsubscribeParticipantBooks();
     };
   }, [user]);
 
@@ -48,8 +58,22 @@ export function useHouseholdBooks(user: User | null) {
   }
 
   return {
-    books,
+    books: mergeHouseholdBooks(ownerBooks, participantBooks),
     archivedBooks,
     isLoading,
   };
+}
+
+function mergeHouseholdBooks(
+  ownerBooks: HouseholdBook[],
+  participantBooks: HouseholdBook[],
+) {
+  const booksById = new Map<string, HouseholdBook>();
+
+  ownerBooks.forEach((book) => booksById.set(book.id, book));
+  participantBooks.forEach((book) => booksById.set(book.id, book));
+
+  return Array.from(booksById.values()).sort((firstBook, secondBook) => {
+    return secondBook.createdAt.getTime() - firstBook.createdAt.getTime();
+  });
 }

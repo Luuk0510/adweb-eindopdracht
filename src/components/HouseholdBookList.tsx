@@ -6,15 +6,21 @@ import { HouseholdBook } from "@/types/householdBook";
 type HouseholdBookListProps = {
   books: HouseholdBook[];
   isLoading: boolean;
-  onEdit: (bookId: string, bookName: string, bookDescription: string) => void;
-  onArchive: (bookId: string) => void;
+  currentUserId: string;
+  onEditAction: (
+    bookId: string,
+    bookName: string,
+    bookDescription: string,
+  ) => void;
+  onArchiveAction: (bookId: string) => void;
 };
 
 export function HouseholdBookList({
   books,
   isLoading,
-  onEdit,
-  onArchive,
+  currentUserId,
+  onEditAction,
+  onArchiveAction,
 }: HouseholdBookListProps) {
   if (isLoading) {
     return (
@@ -49,19 +55,25 @@ export function HouseholdBookList({
           </p>
 
           <div className="mt-4 flex flex-wrap gap-3">
-            <button
-              className="rounded-lg border px-3 py-2 text-sm font-medium"
-              onClick={() => onEdit(book.id, book.name, book.description)}
-            >
-              Aanpassen
-            </button>
+            {book.ownerId === currentUserId && (
+              <>
+                <button
+                  className="rounded-lg border px-3 py-2 text-sm font-medium"
+                  onClick={() =>
+                    onEditAction(book.id, book.name, book.description)
+                  }
+                >
+                  Aanpassen
+                </button>
 
-            <button
-              className="rounded-lg border px-3 py-2 text-sm font-medium text-red-700"
-              onClick={() => onArchive(book.id)}
-            >
-              Archiveren
-            </button>
+                <button
+                  className="rounded-lg border px-3 py-2 text-sm font-medium text-red-700"
+                  onClick={() => onArchiveAction(book.id)}
+                >
+                  Archiveren
+                </button>
+              </>
+            )}
 
             <Link
               className="rounded-lg border px-3 py-2 text-sm font-medium"
@@ -69,6 +81,15 @@ export function HouseholdBookList({
             >
               Bekijken
             </Link>
+
+            {book.ownerId === currentUserId && (
+              <Link
+                className="rounded-lg border px-3 py-2 text-sm font-medium"
+                href={`/household-books/${book.id}/members`}
+              >
+                Deelnemers
+              </Link>
+            )}
           </div>
         </article>
       ))}
