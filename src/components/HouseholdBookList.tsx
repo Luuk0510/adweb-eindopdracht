@@ -6,6 +6,7 @@ import { HouseholdBook } from "@/types/householdBook";
 type HouseholdBookListProps = {
   books: HouseholdBook[];
   isLoading: boolean;
+  currentUserId: string;
   onEdit: (bookId: string, bookName: string, bookDescription: string) => void;
   onArchive: (bookId: string) => void;
 };
@@ -13,6 +14,7 @@ type HouseholdBookListProps = {
 export function HouseholdBookList({
   books,
   isLoading,
+  currentUserId,
   onEdit,
   onArchive,
 }: HouseholdBookListProps) {
@@ -49,19 +51,23 @@ export function HouseholdBookList({
           </p>
 
           <div className="mt-4 flex flex-wrap gap-3">
-            <button
-              className="rounded-lg border px-3 py-2 text-sm font-medium"
-              onClick={() => onEdit(book.id, book.name, book.description)}
-            >
-              Aanpassen
-            </button>
+            {book.ownerId === currentUserId && (
+              <>
+                <button
+                  className="rounded-lg border px-3 py-2 text-sm font-medium"
+                  onClick={() => onEdit(book.id, book.name, book.description)}
+                >
+                  Aanpassen
+                </button>
 
-            <button
-              className="rounded-lg border px-3 py-2 text-sm font-medium text-red-700"
-              onClick={() => onArchive(book.id)}
-            >
-              Archiveren
-            </button>
+                <button
+                  className="rounded-lg border px-3 py-2 text-sm font-medium text-red-700"
+                  onClick={() => onArchive(book.id)}
+                >
+                  Archiveren
+                </button>
+              </>
+            )}
 
             <Link
               className="rounded-lg border px-3 py-2 text-sm font-medium"

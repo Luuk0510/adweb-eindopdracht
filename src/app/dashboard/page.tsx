@@ -150,6 +150,7 @@ export default function DashboardPage() {
       <HouseholdBookList
         books={books}
         isLoading={isLoading}
+        currentUserId={user?.uid ?? ""}
         onEdit={startEditingBook}
         onArchive={handleArchiveBook}
       />
