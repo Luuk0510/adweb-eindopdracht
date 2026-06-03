@@ -62,7 +62,10 @@ export function MonthlyBalanceChart({
       ) : (
         <div className="mt-6 h-80 rounded-xl border border-slate-200 bg-white p-4">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={monthlyChartData}>
+            <LineChart
+              data={monthlyChartData}
+              margin={{ top: 8, right: 5, bottom: 0, left: 5 }}
+            >
               <CartesianGrid
                 strokeDasharray="4 4"
                 stroke="#e2e8f0"
@@ -73,6 +76,7 @@ export function MonthlyBalanceChart({
                 axisLine={false}
               />
               <YAxis
+                width={80}
                 tickLine={false}
                 axisLine={false}
                 tickFormatter={(value) =>

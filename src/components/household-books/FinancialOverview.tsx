@@ -440,13 +440,13 @@ export function FinancialOverview({
 
       <FinancialSummaryCards cards={summaryCards} />
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
-        <div className="order-2 lg:order-1">
-          <MonthlyBalanceChart
-            monthlyChartData={monthlyChartData}
-            formatCurrency={formatCurrency}
-          />
+      <MonthlyBalanceChart
+        monthlyChartData={monthlyChartData}
+        formatCurrency={formatCurrency}
+      />
 
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <div>
           <TransactionList
             transactions={monthlyTransactions}
             effectiveMonth={effectiveMonth}
@@ -458,7 +458,7 @@ export function FinancialOverview({
           />
         </div>
 
-        <aside className="order-1 lg:order-2 lg:sticky lg:top-6 lg:self-start">
+        <aside className="lg:sticky lg:top-6 lg:self-start">
           <TransactionForm
             title={transactionTitle}
             amount={transactionAmount}
