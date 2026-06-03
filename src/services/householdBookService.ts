@@ -43,6 +43,33 @@ function handleSnapshotError(error: FirestoreError) {
   console.error(error.message);
 }
 
+function isPermissionDeniedError(error: unknown) {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: string }).code === "permission-denied"
+  );
+}
+
+function getFriendlyFirestoreErrorMessage(error: unknown) {
+  if (isPermissionDeniedError(error)) {
+    return "Je hebt hier geen toegang toe. Controleer je rechten of probeer het later opnieuw.";
+  }
+
+  return null;
+}
+
+function rethrowFriendlyFirestoreError(error: unknown) {
+  const friendlyMessage = getFriendlyFirestoreErrorMessage(error);
+
+  if (friendlyMessage) {
+    throw new Error(friendlyMessage);
+  }
+
+  throw error;
+}
+
 function mapHouseholdBook(
   documentId: string,
   data: DocumentData,
@@ -209,57 +236,99 @@ export async function createHouseholdBook(
   });
 }
 
-export async function getHouseholdBookById(bookId: string, userId: string) {
-  const bookReference = doc(db, "householdBooks", bookId);
-  const bookSnapshot = await getDoc(bookReference);
+export async function getHouseholdBookById(
+  bookId: string,
+  userId: string,
+) {
+  try {
+    const cachedBook = householdBookCache.get(bookId);
 
-  if (!bookSnapshot.exists()) {
-    return null;
+    if (cachedBook) {
+      const isParticipant =
+        cachedBook.ownerId === userId ||
+        cachedBook.participantIds.includes(userId);
+
+      if (isParticipant && !cachedBook.isArchived) {
+        return cachedBook;
+      }
+    }
+
+    const bookReference = doc(db, "householdBooks", bookId);
+    const bookSnapshot = await getDoc(bookReference);
+
+    if (!bookSnapshot.exists()) {
+      return null;
+    }
+
+    const data = bookSnapshot.data();
+
+    const participantIds = data.participantIds ?? [];
+    const isParticipant = participantIds.includes(userId);
+
+    if ((data.ownerId !== userId && !isParticipant) || data.isArchived) {
+      return null;
+    }
+
+    const book = mapHouseholdBook(bookSnapshot.id, data);
+
+    cacheHouseholdBook(book);
+
+    return book;
+  } catch (error) {
+    const friendlyMessage = getFriendlyFirestoreErrorMessage(error);
+
+    if (friendlyMessage) {
+      throw new Error(friendlyMessage);
+    }
+
+    throw error;
   }
-
-  const data = bookSnapshot.data();
-
-  const participantIds = data.participantIds ?? [];
-  const isParticipant = participantIds.includes(userId);
-
-  if ((data.ownerId !== userId && !isParticipant) || data.isArchived) {
-    return null;
-  }
-
-  const book = mapHouseholdBook(bookSnapshot.id, data);
-  cacheHouseholdBook(book);
-
-  return book;
 }
 
 export async function getTransactionsByHouseholdBookId(
   bookId: string,
   userId: string,
 ) {
-  const book = await getHouseholdBookById(bookId, userId);
+  try {
+    const cachedTransactions = transactionsCache.get(bookId);
 
-  if (!book) {
-    throw new Error("Huishoudboekje niet gevonden.");
+    if (cachedTransactions) {
+      return cachedTransactions;
+    }
+
+    const book = await getHouseholdBookById(bookId, userId);
+
+    if (!book) {
+      throw new Error("Huishoudboekje niet gevonden.");
+    }
+
+    const transactionsQuery = query(
+      transactionsCollection,
+      where("bookId", "==", bookId),
+    );
+
+    const snapshot = await getDocs(transactionsQuery);
+
+    const transactions = snapshot.docs
+      .map((transactionDocument: QueryDocumentSnapshot<DocumentData>) =>
+        mapTransaction(
+          transactionDocument.id,
+          transactionDocument.data(),
+        ),
+      )
+      .sort((firstTransaction, secondTransaction) => {
+        return (
+          secondTransaction.date.getTime() -
+          firstTransaction.date.getTime()
+        );
+      });
+
+    transactionsCache.set(bookId, transactions);
+
+    return transactions;
+  } catch (error) {
+    rethrowFriendlyFirestoreError(error);
   }
-
-  const transactionsQuery = query(
-    transactionsCollection,
-    where("bookId", "==", bookId),
-  );
-
-  const snapshot = await getDocs(transactionsQuery);
-
-  const transactions = snapshot.docs
-    .map((transactionDocument: QueryDocumentSnapshot<DocumentData>) => {
-      return mapTransaction(transactionDocument.id, transactionDocument.data());
-    })
-    .sort((firstTransaction, secondTransaction) => {
-      return secondTransaction.date.getTime() - firstTransaction.date.getTime();
-    });
-
-  transactionsCache.set(bookId, transactions);
-
-  return transactions;
 }
 
 export async function archiveHouseholdBook(bookId: string, userId: string) {
