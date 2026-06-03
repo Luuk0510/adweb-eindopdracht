@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { HouseholdBookSkeleton } from "@/components/HouseholdBookSkeleton";
+import { HouseholdBookSkeleton } from "@/components/household-books/HouseholdBookSkeleton";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 import {
   createCategory,

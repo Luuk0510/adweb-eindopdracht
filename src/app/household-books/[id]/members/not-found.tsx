@@ -1,4 +1,4 @@
-import { HouseholdBookNotAvailable } from "@/components/HouseholdBookNotAvailable";
+import { HouseholdBookNotAvailable } from "@/components/household-books/HouseholdBookNotAvailable";
 
 export default function NotFoundPage() {
   return (

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { HouseholdBookSkeleton } from "@/components/HouseholdBookSkeleton";
+import { HouseholdBookSkeleton } from "@/components/household-books/HouseholdBookSkeleton";
 import { FinancialOverview } from "@/components/household-books/FinancialOverview";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 import {

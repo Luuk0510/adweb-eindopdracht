@@ -4,8 +4,11 @@ import { useEffect, useMemo, useState } from "react";
 
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 import {
+  createTransaction,
+  deleteTransaction,
   getCachedTransactions,
   getTransactionsByHouseholdBookId,
+  updateTransaction,
 } from "@/services/householdBookService";
 
 import { FinancialHeader } from "@/components/household-books/FinancialHeader";
@@ -17,6 +20,7 @@ import {
   MonthlyBalanceChart,
   MonthlyChartPoint,
 } from "@/components/household-books/MonthlyBalanceChart";
+import { TransactionForm } from "@/components/household-books/TransactionForm";
 import { TransactionList } from "@/components/household-books/TransactionList";
 
 import { Transaction } from "@/types/transaction";
@@ -71,6 +75,18 @@ function formatCurrency(amount: number) {
   return currencyFormatter.format(amount);
 }
 
+function getDateInputValue(date: Date) {
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, "0");
+  const day = `${date.getDate()}`.padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
+function getDateFromInput(value: string) {
+  return new Date(`${value}T00:00:00`);
+}
+
 export function FinancialOverview({
   bookId,
   title,
@@ -92,6 +108,18 @@ export function FinancialOverview({
 
   const [isLoading, setIsLoading] = useState(!cachedTransactions);
   const [errorMessage, setErrorMessage] = useState("");
+  const [transactionTitle, setTransactionTitle] = useState("");
+  const [transactionAmount, setTransactionAmount] = useState("");
+  const [transactionType, setTransactionType] = useState<"expense" | "income">(
+    "expense",
+  );
+  const [transactionDate, setTransactionDate] = useState(
+    getDateInputValue(new Date()),
+  );
+  const [editingTransactionId, setEditingTransactionId] = useState<
+    string | null
+  >(null);
+  const [transactionErrorMessage, setTransactionErrorMessage] = useState("");
 
   useEffect(() => {
     if (!user) {
@@ -267,9 +295,106 @@ export function FinancialOverview({
     },
   ];
 
+  async function refreshTransactions() {
+    if (!user) {
+      return;
+    }
+
+    const fetchedTransactions =
+      (await getTransactionsByHouseholdBookId(bookId, user.uid)) ?? [];
+
+    setTransactions(fetchedTransactions);
+  }
+
+  function resetTransactionForm() {
+    setTransactionTitle("");
+    setTransactionAmount("");
+    setTransactionType("expense");
+    setTransactionDate(getDateInputValue(new Date()));
+    setEditingTransactionId(null);
+    setTransactionErrorMessage("");
+  }
+
+  async function handleTransactionSubmit(
+    event: React.SubmitEvent<HTMLFormElement>,
+  ) {
+    event.preventDefault();
+
+    if (!user) {
+      return;
+    }
+
+    const amount = Number(transactionAmount);
+
+    if (!amount || amount <= 0) {
+      setTransactionErrorMessage("Vul minimaal de kosten in.");
+      return;
+    }
+
+    const transactionDateValue = getDateFromInput(transactionDate);
+
+    try {
+      if (editingTransactionId) {
+        await updateTransaction(editingTransactionId, bookId, user.uid, {
+          title: transactionTitle,
+          amount,
+          type: transactionType,
+          date: transactionDateValue,
+        });
+      } else {
+        await createTransaction(bookId, user.uid, {
+          title: transactionTitle,
+          amount,
+          type: transactionType,
+          date: transactionDateValue,
+        });
+      }
+
+      await refreshTransactions();
+      setSelectedMonth(getMonthKey(transactionDateValue));
+      resetTransactionForm();
+    } catch (error) {
+      setTransactionErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "Transactie opslaan is niet gelukt.",
+      );
+    }
+  }
+
+  function startEditingTransaction(transaction: Transaction) {
+    setEditingTransactionId(transaction.id);
+    setTransactionTitle(transaction.title);
+    setTransactionAmount(String(transaction.amount));
+    setTransactionType(transaction.type);
+    setTransactionDate(getDateInputValue(transaction.date));
+    setTransactionErrorMessage("");
+  }
+
+  async function handleDeleteTransaction(transactionId: string) {
+    if (!user) {
+      return;
+    }
+
+    try {
+      await deleteTransaction(transactionId, bookId, user.uid);
+      await refreshTransactions();
+
+      if (editingTransactionId === transactionId) {
+        resetTransactionForm();
+      }
+    } catch (error) {
+      setTransactionErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "Transactie verwijderen is niet gelukt.",
+      );
+    }
+  }
+
   if (isCheckingAuth || isLoading) {
     return (
-      <section className="mt-6 rounded-4xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+      <section className="mt-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
         <h1 className="text-3xl font-semibold text-slate-950">
           {title}
         </h1>
@@ -285,7 +410,7 @@ export function FinancialOverview({
 
   if (errorMessage) {
     return (
-      <section className="mt-6 rounded-[28px] border border-rose-200 bg-rose-50 p-8 text-rose-900 shadow-sm">
+      <section className="mt-6 rounded-xl border border-rose-200 bg-rose-50 p-8 text-rose-900 shadow-sm">
         <h1 className="text-2xl font-semibold">
           Overzicht niet beschikbaar
         </h1>
@@ -295,7 +420,7 @@ export function FinancialOverview({
   }
 
   return (
-    <section className="mt-6 rounded-4xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+    <section className="mt-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
       <FinancialHeader
         title={title}
         description={description}
@@ -312,13 +437,35 @@ export function FinancialOverview({
         formatCurrency={formatCurrency}
       />
 
-      <TransactionList
-        transactions={monthlyTransactions}
-        effectiveMonth={effectiveMonth}
-        getMonthLabel={getMonthLabel}
-        formatDate={formatDate}
-        formatCurrency={formatCurrency}
-      />
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <div>
+          <TransactionList
+            transactions={monthlyTransactions}
+            effectiveMonth={effectiveMonth}
+            formatDate={formatDate}
+            formatCurrency={formatCurrency}
+            onEditAction={startEditingTransaction}
+            onDeleteAction={handleDeleteTransaction}
+          />
+        </div>
+
+        <aside className="lg:sticky lg:top-6 lg:self-start">
+          <TransactionForm
+            title={transactionTitle}
+            amount={transactionAmount}
+            type={transactionType}
+            date={transactionDate}
+            editingTransactionId={editingTransactionId}
+            errorMessage={transactionErrorMessage}
+            onTitleChange={setTransactionTitle}
+            onAmountChange={setTransactionAmount}
+            onTypeChange={setTransactionType}
+            onDateChange={setTransactionDate}
+            onSubmitAction={handleTransactionSubmit}
+            onCancelAction={resetTransactionForm}
+          />
+        </aside>
+      </div>
     </section>
   );
 }

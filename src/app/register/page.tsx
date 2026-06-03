@@ -1,6 +1,7 @@
 "use client";
 
 import { SubmitEvent, useState } from "react";
+import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import { registerWithEmail } from "@/services/authService";
 import { useRouter } from "next/navigation";
 import { FirebaseError } from "firebase/app";
@@ -66,9 +67,9 @@ export default function RegisterPage() {
           />
         </div>
 
-        <button className="w-full rounded bg-black p-2 text-white" type="submit">
+        <PrimaryButton className="w-full" type="submit">
           Registreren
-        </button>
+        </PrimaryButton>
       </form>
     </main>
   );

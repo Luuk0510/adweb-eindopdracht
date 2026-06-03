@@ -11,14 +11,14 @@ type FinancialSummaryCardsProps = {
 
 export function FinancialSummaryCards({ cards }: FinancialSummaryCardsProps) {
   return (
-    <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+    <div className="mt-6 grid gap-4 md:grid-cols-3">
       {cards.map((card) => (
         <article
           key={card.label}
-          className={`rounded-2xl border p-5 shadow-sm ${card.accentClassName}`}
+          className={`rounded-xl border p-4 shadow-sm ${card.accentClassName}`}
         >
           <p className="text-sm font-medium">{card.label}</p>
-          <p className="mt-3 text-3xl font-semibold">{card.value}</p>
+          <p className="mt-2 text-2xl font-semibold">{card.value}</p>
           <p className="mt-2 text-sm opacity-80">{card.helper}</p>
         </article>
       ))}
