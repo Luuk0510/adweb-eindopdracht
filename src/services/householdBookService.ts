@@ -402,6 +402,10 @@ type TransactionInput = {
   date: Date;
 };
 
+function getTransactionTitle(title: string) {
+  return title.trim().slice(0, 50) || "Geen titel";
+}
+
 export async function createCategory(
   bookId: string,
   userId: string,
@@ -464,7 +468,7 @@ export async function createTransaction(
     bookId,
     categoryId: null,
     type: transaction.type,
-    title: transaction.title.trim() || "Geen titel",
+    title: getTransactionTitle(transaction.title),
     amount: transaction.amount,
     date: transaction.date,
     createdBy: userId,
@@ -557,7 +561,7 @@ export async function updateTransaction(
 
   await updateDoc(transactionReference, {
     type: transaction.type,
-    title: transaction.title.trim() || "Geen titel",
+    title: getTransactionTitle(transaction.title),
     amount: transaction.amount,
     date: transaction.date,
     updatedAt: serverTimestamp(),

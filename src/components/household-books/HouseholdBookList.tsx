@@ -81,12 +81,9 @@ export function HouseholdBookList({
               Bekijken
             </SecondaryLink>
 
-            <Link
-              className="rounded-lg border px-3 py-2 text-sm font-medium"
-              href={`/household-books/${book.id}/categories`}
-            >
+            <SecondaryLink href={`/household-books/${book.id}/categories`}>
               Categorieen
-            </Link>
+            </SecondaryLink>
 
             {book.ownerId === currentUserId && (
               <SecondaryLink href={`/household-books/${book.id}/members`}>

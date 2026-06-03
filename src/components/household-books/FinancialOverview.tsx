@@ -442,7 +442,6 @@ export function FinancialOverview({
           <TransactionList
             transactions={monthlyTransactions}
             effectiveMonth={effectiveMonth}
-            getMonthLabel={getMonthLabel}
             formatDate={formatDate}
             formatCurrency={formatCurrency}
             onEditAction={startEditingTransaction}

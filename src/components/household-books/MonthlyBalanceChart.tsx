@@ -60,8 +60,8 @@ export function MonthlyBalanceChart({
           </p>
         </div>
       ) : (
-        <div className="mt-6 h-80 rounded-xl border border-slate-200 bg-white p-4">
-          <ResponsiveContainer width="100%" height="100%">
+        <div className="mt-6 h-80 min-h-80 min-w-0 rounded-xl border border-slate-200 bg-white p-4">
+          <ResponsiveContainer width="100%" height="100%" minWidth={1}>
             <LineChart
               data={monthlyChartData}
               margin={{ top: 8, right: 5, bottom: 0, left: 5 }}

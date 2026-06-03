@@ -51,6 +51,7 @@ export function TransactionForm({
             value={title}
             onChange={(event) => onTitleChange(event.target.value)}
             placeholder="Bijvoorbeeld boodschappen"
+            maxLength={50}
           />
         </div>
 

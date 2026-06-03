@@ -7,7 +7,6 @@ import { Transaction } from "@/types/transaction";
 type TransactionListProps = {
   transactions: Transaction[];
   effectiveMonth: string;
-  getMonthLabel: (monthKey: string) => string;
   formatDate: (date: Date) => string;
   formatCurrency: (amount: number) => string;
   onEditAction: (transaction: Transaction) => void;
@@ -16,8 +15,6 @@ type TransactionListProps = {
 
 export function TransactionList({
   transactions,
-  effectiveMonth,
-  getMonthLabel,
   formatDate,
   formatCurrency,
   onEditAction,
@@ -39,9 +36,6 @@ export function TransactionList({
               Gesorteerd op datum, nieuwste eerst.
             </p>
           </div>
-          <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-slate-500 shadow-sm">
-            {getMonthLabel(effectiveMonth)}
-          </span>
         </div>
 
         {transactions.length === 0 ? (
@@ -82,14 +76,14 @@ export function TransactionList({
 
                       <div className="flex flex-wrap justify-center gap-2">
                         <SecondaryButton
-                          className="py-1 text-xs"
+                          className="py-1 text-xs bg-white"
                           type="button"
                           onClick={() => setTransactionIdToDelete(null)}
                         >
                           Annuleren
                         </SecondaryButton>
                         <SecondaryButton
-                          className="py-1 text-xs"
+                          className="py-1 text-xs hover:bg-red-200"
                           variant="danger"
                           type="button"
                           onClick={() => {
@@ -102,9 +96,9 @@ export function TransactionList({
                       </div>
                     </div>
                   ) : (
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <p className="text-base font-semibold text-slate-950">
+                  <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
+                    <div className="min-w-0">
+                      <p className="max-w-full break-words text-base font-semibold text-slate-950">
                         {transaction.title}
                       </p>
                       <div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-500">
@@ -123,7 +117,7 @@ export function TransactionList({
                       </div>
                     </div>
 
-                    <div className="flex flex-col gap-3 sm:items-end">
+                    <div className="flex min-w-0 flex-col gap-3 sm:items-end">
                       <p
                         className={`text-lg font-semibold ${
                           isIncome ? "text-emerald-700" : "text-rose-700"
@@ -133,7 +127,7 @@ export function TransactionList({
                         {formatCurrency(transaction.amount)}
                       </p>
 
-                      <div className="flex gap-2">
+                      <div className="flex flex-wrap justify-end gap-2">
                         <SecondaryButton
                           className="py-1 text-xs"
                           type="button"
