@@ -1,6 +1,6 @@
 "use client";
 
-import { SubmitEvent } from "react";
+import { SubmitEvent, useId } from "react";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import { SecondaryButton } from "@/components/ui/SecondaryButton";
 
@@ -25,6 +25,9 @@ export function HouseholdBookForm({
   onSubmit,
   onCancel,
 }: HouseholdBookFormProps) {
+  const nameId = useId();
+  const descriptionId = useId();
+
   return (
     <section className="mb-8 rounded-xl border border-gray-200 bg-white p-6 text-gray-900 shadow-sm">
       <h2 className="text-xl font-semibold">
@@ -33,8 +36,11 @@ export function HouseholdBookForm({
 
       <form onSubmit={onSubmit} className="mt-4 space-y-4">
         <div>
-          <label className="block text-sm font-medium">Naam *</label>
+          <label className="block text-sm font-medium" htmlFor={nameId}>
+            Naam *
+          </label>
           <input
+            id={nameId}
             className="mt-1 w-full rounded-lg border p-2"
             value={name}
             onChange={(event) => onNameChange(event.target.value)}
@@ -43,8 +49,14 @@ export function HouseholdBookForm({
         </div>
 
         <div>
-          <label className="block text-sm font-medium">Omschrijving</label>
+          <label
+            className="block text-sm font-medium"
+            htmlFor={descriptionId}
+          >
+            Omschrijving
+          </label>
           <textarea
+            id={descriptionId}
             className="mt-1 w-full rounded-lg border p-2"
             value={description}
             onChange={(event) => onDescriptionChange(event.target.value)}
