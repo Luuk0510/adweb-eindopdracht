@@ -7,6 +7,8 @@ import {
   getDoc,
   getDocs,
   onSnapshot,
+  QueryDocumentSnapshot,
+  QuerySnapshot,
   query,
   serverTimestamp,
   updateDoc,
@@ -20,11 +22,7 @@ const householdBooksCollection = collection(db, "householdBooks");
 const transactionsCollection = collection(db, "transactions");
 
 function handleSnapshotError(error: FirestoreError) {
-  if (error.code === "permission-denied") {
-    return;
-  }
-
-  console.error(error.message);
+  console.error(error);
 }
 
 function mapHouseholdBook(
@@ -95,9 +93,11 @@ export function listenToActiveHouseholdBooks(
 
   return onSnapshot(
     householdBooksQuery,
-    (snapshot) => {
+    (snapshot: QuerySnapshot<DocumentData>) => {
       const books = snapshot.docs
-        .map((document) => mapHouseholdBook(document.id, document.data()))
+        .map((document: QueryDocumentSnapshot<DocumentData>) =>
+          mapHouseholdBook(document.id, document.data()),
+        )
         .sort((firstBook, secondBook) => {
           return secondBook.createdAt.getTime() - firstBook.createdAt.getTime();
         });
@@ -120,9 +120,11 @@ export function listenToParticipantHouseholdBooks(
 
   return onSnapshot(
     householdBooksQuery,
-    (snapshot) => {
+    (snapshot: QuerySnapshot<DocumentData>) => {
       const books = snapshot.docs
-        .map((document) => mapHouseholdBook(document.id, document.data()))
+        .map((document: QueryDocumentSnapshot<DocumentData>) =>
+          mapHouseholdBook(document.id, document.data()),
+        )
         .sort((firstBook, secondBook) => {
           return secondBook.createdAt.getTime() - firstBook.createdAt.getTime();
         });
@@ -145,9 +147,11 @@ export function listenToArchivedHouseholdBooks(
 
   return onSnapshot(
     householdBooksQuery,
-    (snapshot) => {
+    (snapshot: QuerySnapshot<DocumentData>) => {
       const books = snapshot.docs
-        .map((document) => mapHouseholdBook(document.id, document.data()))
+        .map((document: QueryDocumentSnapshot<DocumentData>) =>
+          mapHouseholdBook(document.id, document.data()),
+        )
         .sort((firstBook, secondBook) => {
           return secondBook.createdAt.getTime() - firstBook.createdAt.getTime();
         });
@@ -216,7 +220,7 @@ export async function getTransactionsByHouseholdBookId(
   const snapshot = await getDocs(transactionsQuery);
 
   return snapshot.docs
-    .map((transactionDocument) => {
+    .map((transactionDocument: QueryDocumentSnapshot<DocumentData>) => {
       return mapTransaction(transactionDocument.id, transactionDocument.data());
     })
     .sort((firstTransaction, secondTransaction) => {

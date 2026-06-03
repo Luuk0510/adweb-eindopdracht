@@ -151,13 +151,13 @@ export default function DashboardPage() {
         books={books}
         isLoading={isLoading}
         currentUserId={user?.uid ?? ""}
-        onEdit={startEditingBook}
-        onArchive={handleArchiveBook}
+        onEditAction={startEditingBook}
+        onArchiveAction={handleArchiveBook}
       />
 
       <ArchivedHouseholdBookList
         archivedBooks={archivedBooks}
-        onRestore={handleRestoreBook}
+        onRestoreAction={handleRestoreBook}
       />
     </main>
   );

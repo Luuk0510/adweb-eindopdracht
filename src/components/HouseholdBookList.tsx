@@ -7,16 +7,20 @@ type HouseholdBookListProps = {
   books: HouseholdBook[];
   isLoading: boolean;
   currentUserId: string;
-  onEdit: (bookId: string, bookName: string, bookDescription: string) => void;
-  onArchive: (bookId: string) => void;
+  onEditAction: (
+    bookId: string,
+    bookName: string,
+    bookDescription: string,
+  ) => void;
+  onArchiveAction: (bookId: string) => void;
 };
 
 export function HouseholdBookList({
   books,
   isLoading,
   currentUserId,
-  onEdit,
-  onArchive,
+  onEditAction,
+  onArchiveAction,
 }: HouseholdBookListProps) {
   if (isLoading) {
     return (
@@ -55,14 +59,16 @@ export function HouseholdBookList({
               <>
                 <button
                   className="rounded-lg border px-3 py-2 text-sm font-medium"
-                  onClick={() => onEdit(book.id, book.name, book.description)}
+                  onClick={() =>
+                    onEditAction(book.id, book.name, book.description)
+                  }
                 >
                   Aanpassen
                 </button>
 
                 <button
                   className="rounded-lg border px-3 py-2 text-sm font-medium text-red-700"
-                  onClick={() => onArchive(book.id)}
+                  onClick={() => onArchiveAction(book.id)}
                 >
                   Archiveren
                 </button>
