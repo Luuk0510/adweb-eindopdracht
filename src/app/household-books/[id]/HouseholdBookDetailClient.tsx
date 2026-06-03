@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { HouseholdBookSkeleton } from "@/components/HouseholdBookSkeleton";
+import { FinancialOverview } from "@/components/household-books/FinancialOverview";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 import { getHouseholdBookById } from "@/services/householdBookService";
 import { HouseholdBook } from "@/types/householdBook";
@@ -59,7 +60,7 @@ export function HouseholdBookDetailClient({
   }
 
   return (
-    <main className="mx-auto max-w-5xl p-8">
+    <main className="mx-auto max-w-6xl p-8">
       <Link className="text-sm underline" href="/dashboard">
         Terug naar dashboard
       </Link>
@@ -71,6 +72,12 @@ export function HouseholdBookDetailClient({
           {book.description || "Geen omschrijving ingevuld."}
         </p>
       </section>
+
+      <FinancialOverview
+        bookId={bookId}
+        title="Overzicht van uitgaven en inkomsten"
+        description="Bekijk je financiële bewegingen op datum, filter per maand en zie meteen welke balans je opbouwt binnen dit huishoudboekje."
+      />
     </main>
   );
 }
