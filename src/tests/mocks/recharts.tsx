@@ -20,17 +20,10 @@ export function Line({ name }: { name: string }) {
   return <div>{name}</div>;
 }
 
-export function Bar({ name }: { name: string }) {
-  return <div>{name}</div>;
-}
-
 export function LineChart({ children }: { children: ReactNode }) {
   return <div data-testid="line-chart">{children}</div>;
 }
 
-export function BarChart({ children }: { children: ReactNode }) {
-  return <div data-testid="bar-chart">{children}</div>;
-}
 
 export function ResponsiveContainer({ children }: { children: ReactNode }) {
   return <div data-testid="responsive-container">{children}</div>;
