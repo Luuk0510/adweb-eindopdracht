@@ -17,7 +17,6 @@ service cloud.firestore {
 
     function isBookParticipant(bookId) {
       return isAuthenticated()
-        && bookDoc(bookId).data.participantIds is list
         && request.auth.uid in bookDoc(bookId).data.participantIds;
     }
 
@@ -34,7 +33,6 @@ service cloud.firestore {
 
       function isParticipant() {
         return isAuthenticated()
-          && resource.data.participantIds is list
           && request.auth.uid in resource.data.participantIds;
       }
 

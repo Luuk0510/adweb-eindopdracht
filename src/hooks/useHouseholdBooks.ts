@@ -52,14 +52,30 @@ export function useHouseholdBooks(user: User | null) {
   if (!user) {
     return {
       books: [],
+      ownerBooks: [],
+      participantBooks: [],
       archivedBooks: [],
       isLoading: false,
     };
   }
 
+  const currentOwnerBooks = ownerBooks.filter((book) => {
+    return book.ownerId === user.uid;
+  });
+
+  const currentParticipantBooks = participantBooks.filter((book) => {
+    return book.ownerId !== user.uid && book.participantIds.includes(user.uid);
+  });
+
+  const currentArchivedBooks = archivedBooks.filter((book) => {
+    return book.ownerId === user.uid;
+  });
+
   return {
-    books: mergeHouseholdBooks(ownerBooks, participantBooks),
-    archivedBooks,
+    books: mergeHouseholdBooks(currentOwnerBooks, currentParticipantBooks),
+    ownerBooks: sortBooksByName(currentOwnerBooks),
+    participantBooks: sortBooksByName(currentParticipantBooks),
+    archivedBooks: currentArchivedBooks,
     isLoading,
   };
 }
@@ -68,12 +84,19 @@ function mergeHouseholdBooks(
   ownerBooks: HouseholdBook[],
   participantBooks: HouseholdBook[],
 ) {
-  const booksById = new Map<string, HouseholdBook>();
+  const ownerBookIds = new Set(ownerBooks.map((book) => book.id));
+  const sharedBooks = participantBooks.filter(
+    (book) => !ownerBookIds.has(book.id),
+  );
 
-  ownerBooks.forEach((book) => booksById.set(book.id, book));
-  participantBooks.forEach((book) => booksById.set(book.id, book));
+  return [
+    ...sortBooksByName(ownerBooks),
+    ...sortBooksByName(sharedBooks),
+  ];
+}
 
-  return Array.from(booksById.values()).sort((firstBook, secondBook) => {
-    return secondBook.createdAt.getTime() - firstBook.createdAt.getTime();
+function sortBooksByName(books: HouseholdBook[]) {
+  return [...books].sort((firstBook, secondBook) => {
+    return firstBook.name.localeCompare(secondBook.name, "nl-NL");
   });
 }

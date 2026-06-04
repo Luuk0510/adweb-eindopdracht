@@ -23,7 +23,8 @@ export default function DashboardPage() {
   const [editingBookId, setEditingBookId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
 
-  const { books, archivedBooks, isLoading } = useHouseholdBooks(user);
+  const { ownerBooks, participantBooks, archivedBooks, isLoading } =
+    useHouseholdBooks(user);
 
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -142,13 +143,29 @@ export default function DashboardPage() {
         onCancel={resetForm}
       />
 
-      <HouseholdBookList
-        books={books}
-        isLoading={isLoading}
-        currentUserId={user?.uid ?? ""}
-        onEditAction={startEditingBook}
-        onArchiveAction={handleArchiveBook}
-      />
+      <section className="mt-8">
+        <h2 className="mb-4 text-2xl font-bold">Mijn eigen huishoudboekjes</h2>
+        <HouseholdBookList
+          books={ownerBooks}
+          isLoading={isLoading}
+          currentUserId={user?.uid ?? ""}
+          onEditAction={startEditingBook}
+          onArchiveAction={handleArchiveBook}
+        />
+      </section>
+
+      <section className="mt-8">
+        <h2 className="mb-4 text-2xl font-bold">Met mij gedeeld</h2>
+        <HouseholdBookList
+          books={participantBooks}
+          isLoading={isLoading}
+          currentUserId={user?.uid ?? ""}
+          emptyTitle="Geen gedeelde huishoudboekjes"
+          emptyMessage="Huishoudboekjes die anderen met jou delen komen hier te staan."
+          onEditAction={startEditingBook}
+          onArchiveAction={handleArchiveBook}
+        />
+      </section>
 
       <ArchivedHouseholdBookList
         archivedBooks={archivedBooks}
