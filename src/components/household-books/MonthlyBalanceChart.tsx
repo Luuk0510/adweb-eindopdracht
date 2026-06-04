@@ -39,24 +39,12 @@ export function MonthlyBalanceChart({
             Bekijk inkomsten en uitgaven per maand als lijngrafiek.
           </p>
         </div>
-
-        <div className="text-xs text-slate-500">
-          {monthlyChartData.length > 0
-            ? `${monthlyChartData.length} maand${
-                monthlyChartData.length === 1 ? "" : "en"
-              }`
-            : "Nog geen maandelijkse data"}
-        </div>
       </div>
 
       {monthlyChartData.length === 0 ? (
         <div className="mt-6 rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center">
           <p className="text-base font-medium text-slate-900">
             De grafiek verschijnt zodra er transacties zijn.
-          </p>
-          <p className="mt-2 text-sm text-slate-500">
-            Voeg inkomsten of uitgaven toe om de maandelijkse trend te
-            zien.
           </p>
         </div>
       ) : (

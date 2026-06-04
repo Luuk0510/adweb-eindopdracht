@@ -83,7 +83,7 @@ export function HouseholdBookMembersClient({
   }
 
   return (
-    <main className="mx-auto max-w-5xl p-8">
+    <main className="mx-auto w-full max-w-4xl p-8">
       <Link className="text-sm underline" href="/dashboard">
         Terug naar dashboard
       </Link>
@@ -92,43 +92,45 @@ export function HouseholdBookMembersClient({
         <h1 className="text-3xl font-bold">Deelnemers</h1>
         <p className="mt-2 text-sm text-gray-600">{book.name}</p>
 
-        <form onSubmit={handleAddParticipant} className="mt-6 space-y-4">
+        <div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
+          <form onSubmit={handleAddParticipant} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium">
+                Firebase gebruiker id
+              </label>
+              <input
+                className="mt-1 w-full rounded-lg border p-2"
+                value={participantId}
+                onChange={(event) => setParticipantId(event.target.value)}
+                required
+              />
+            </div>
+
+            {message && (
+              <p className="rounded-lg bg-gray-50 p-3 text-sm text-gray-700">
+                {message}
+              </p>
+            )}
+
+            <PrimaryButton type="submit">
+              Deelnemer toevoegen
+            </PrimaryButton>
+          </form>
+
           <div>
-            <label className="block text-sm font-medium">
-              Firebase gebruiker id
-            </label>
-            <input
-              className="mt-1 w-full rounded-lg border p-2"
-              value={participantId}
-              onChange={(event) => setParticipantId(event.target.value)}
-              required
-            />
+            <h2 className="text-sm font-medium">Toegevoegde deelnemers</h2>
+            {book.participantIds.length === 0 ? (
+              <p className="mt-2 text-sm text-gray-600">
+                Er zijn nog geen deelnemers.
+              </p>
+            ) : (
+              <ul className="mt-2 list-inside list-disc break-words text-sm text-gray-600">
+                {book.participantIds.map((id) => (
+                  <li key={id}>{id}</li>
+                ))}
+              </ul>
+            )}
           </div>
-
-          {message && (
-            <p className="rounded-lg bg-gray-50 p-3 text-sm text-gray-700">
-              {message}
-            </p>
-          )}
-
-          <PrimaryButton type="submit">
-            Deelnemer toevoegen
-          </PrimaryButton>
-        </form>
-
-        <div className="mt-6">
-          <h2 className="text-sm font-medium">Toegevoegde deelnemers</h2>
-          {book.participantIds.length === 0 ? (
-            <p className="mt-2 text-sm text-gray-600">
-              Er zijn nog geen deelnemers.
-            </p>
-          ) : (
-            <ul className="mt-2 list-inside list-disc text-sm text-gray-600">
-              {book.participantIds.map((id) => (
-                <li key={id}>{id}</li>
-              ))}
-            </ul>
-          )}
         </div>
       </section>
     </main>

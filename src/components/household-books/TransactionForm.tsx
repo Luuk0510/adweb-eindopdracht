@@ -3,17 +3,21 @@
 import { SubmitEvent, useId } from "react";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import { SecondaryButton } from "@/components/ui/SecondaryButton";
+import { Category } from "@/types/category";
 
 type TransactionFormProps = {
   title: string;
   amount: string;
   type: "expense" | "income";
+  categoryId: string;
+  categories: Category[];
   date: string;
   editingTransactionId: string | null;
   errorMessage: string;
   onTitleChange: (title: string) => void;
   onAmountChange: (amount: string) => void;
   onTypeChange: (type: "expense" | "income") => void;
+  onCategoryChange: (categoryId: string) => void;
   onDateChange: (date: string) => void;
   onSubmitAction: (event: SubmitEvent<HTMLFormElement>) => void;
   onCancelAction: () => void;
@@ -23,12 +27,15 @@ export function TransactionForm({
   title,
   amount,
   type,
+  categoryId,
+  categories,
   date,
   editingTransactionId,
   errorMessage,
   onTitleChange,
   onAmountChange,
   onTypeChange,
+  onCategoryChange,
   onDateChange,
   onSubmitAction,
   onCancelAction,
@@ -104,10 +111,25 @@ export function TransactionForm({
         </div>
 
         <div>
-          <label
-            className="block text-sm font-medium text-slate-700"
-            htmlFor={dateId}
+          <label className="block text-sm font-medium text-slate-700">
+            Categorie
+          </label>
+          <select
+            className="mt-1 w-full rounded-lg border border-slate-300 p-2"
+            value={categoryId}
+            onChange={(event) => onCategoryChange(event.target.value)}
           >
+            <option value="">Geen categorie</option>
+            {categories.map((category) => (
+              <option key={category.id} value={category.id}>
+                {category.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700">
             Datum
           </label>
           <input

@@ -43,10 +43,6 @@ export function TransactionList({
             <p className="text-base font-medium text-slate-900">
               Er zijn nog geen transacties voor deze maand.
             </p>
-            <p className="mt-2 text-sm text-slate-500">
-              Zodra inkomsten of uitgaven worden toegevoegd, zie je ze hier
-              direct terug.
-            </p>
           </div>
         ) : (
           <ul className="mt-6 space-y-3">
