@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import { SecondaryButton } from "@/components/ui/SecondaryButton";
+import { Category } from "@/types/category";
 import { Transaction } from "@/types/transaction";
 
 type TransactionListProps = {
   transactions: Transaction[];
+  categories: Category[];
   effectiveMonth: string;
   formatDate: (date: Date) => string;
   formatCurrency: (amount: number) => string;
@@ -15,6 +17,7 @@ type TransactionListProps = {
 
 export function TransactionList({
   transactions,
+  categories,
   formatDate,
   formatCurrency,
   onEditAction,
@@ -49,15 +52,26 @@ export function TransactionList({
             {transactions.map((transaction) => {
               const isIncome = transaction.type === "income";
               const isDeleting = transactionIdToDelete === transaction.id;
+              const category = categories.find(
+                (currentCategory) =>
+                  currentCategory.id === transaction.categoryId,
+              );
 
               return (
                 <li
                   key={transaction.id}
+                  draggable={!isDeleting}
                   className={`max-w-full rounded-xl border p-4 shadow-sm transition hover:border-slate-300 ${
                     isDeleting
                       ? "border-red-200 bg-red-50"
-                      : "border-slate-200 bg-white"
+                      : "cursor-grab border-slate-200 bg-white active:cursor-grabbing"
                   }`}
+                  onDragStart={(event) => {
+                    event.dataTransfer.setData(
+                      "transactionId",
+                      transaction.id,
+                    );
+                  }}
                 >
                   {isDeleting ? (
                     <div className="min-w-0 space-y-4">
@@ -110,6 +124,11 @@ export function TransactionList({
                         >
                           {isIncome ? "Inkomst" : "Uitgave"}
                         </span>
+                        {category && (
+                          <span className="rounded-full bg-sky-100 px-3 py-1 text-sky-800">
+                            {category.name}
+                          </span>
+                        )}
                       </div>
                     </div>
 

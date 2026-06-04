@@ -13,6 +13,7 @@ import {
 } from "@/services/householdBookService";
 
 import { CategoryExpenseBarChart } from "@/components/household-books/CategoryExpenseBarChart";
+import { CategoryDropZone } from "@/components/household-books/CategoryDropZone";
 import { FinancialSummaryCards } from "@/components/household-books/FinancialSummaryCards";
 import { MonthlyBalanceChart } from "@/components/household-books/MonthlyBalanceChart";
 import { TransactionForm } from "@/components/household-books/TransactionForm";
@@ -265,6 +266,51 @@ export function FinancialOverview({
     }
   }
 
+  async function handleDropTransactionOnCategory(
+    transactionId: string,
+    categoryId: string | null,
+  ) {
+    if (!user) {
+      return;
+    }
+
+    const transaction = transactions.find(
+      (currentTransaction) => currentTransaction.id === transactionId,
+    );
+
+    if (!transaction) {
+      return;
+    }
+
+    const previousTransactions = transactions;
+
+    setTransactions((currentTransactions) =>
+      currentTransactions.map((currentTransaction) =>
+        currentTransaction.id === transactionId
+          ? { ...currentTransaction, categoryId }
+          : currentTransaction,
+      ),
+    );
+
+    try {
+      await updateTransaction(transactionId, bookId, user.uid, {
+        title: transaction.title,
+        amount: transaction.amount,
+        type: transaction.type,
+        date: transaction.date,
+        categoryId,
+      });
+      setTransactionErrorMessage("");
+    } catch (error) {
+      setTransactions(previousTransactions);
+      setTransactionErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "Categorie koppelen is niet gelukt.",
+      );
+    }
+  }
+
   if (isCheckingAuth || isLoading) {
     return (
       <section className="mt-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
@@ -354,6 +400,7 @@ export function FinancialOverview({
         <div>
           <TransactionList
             transactions={monthlyTransactions}
+            categories={categories}
             effectiveMonth={effectiveMonth}
             formatDate={formatDate}
             formatCurrency={formatCurrency}
@@ -379,6 +426,11 @@ export function FinancialOverview({
             onDateChange={setTransactionDate}
             onSubmitAction={handleTransactionSubmit}
             onCancelAction={resetTransactionForm}
+          />
+
+          <CategoryDropZone
+            categories={categories}
+            onDropAction={handleDropTransactionOnCategory}
           />
         </aside>
       </div>
