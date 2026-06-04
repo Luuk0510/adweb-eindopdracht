@@ -22,6 +22,7 @@ const archivedBook: HouseholdBook = {
 
 describe("FinancialHeader", () => {
   test("happy flow: maand wijzigen", () => {
+    // Arrange
     const onMonthChange = jest.fn();
 
     render(
@@ -35,15 +36,18 @@ describe("FinancialHeader", () => {
       />,
     );
 
+    // Act
     fireEvent.change(screen.getByLabelText("Bekijk per maand"), {
       target: { value: "2026-05" },
     });
 
+    // Assert
     expect(screen.getByText("Overzicht")).toBeTruthy();
     expect(onMonthChange).toHaveBeenCalledWith("2026-05");
   });
 
   test("bad flow: toont fallback maand als er geen maanden zijn", () => {
+    // Arrange
     render(
       <FinancialHeader
         title="Overzicht"
@@ -55,12 +59,16 @@ describe("FinancialHeader", () => {
       />,
     );
 
+    // Act
+
+    // Assert
     expect(screen.getByText("Maand 2026-06")).toBeTruthy();
   });
 });
 
 describe("FinancialSummaryCards", () => {
   test("toont alle statistiekkaarten", () => {
+    // Arrange
     render(
       <FinancialSummaryCards
         cards={[
@@ -80,6 +88,9 @@ describe("FinancialSummaryCards", () => {
       />,
     );
 
+    // Act
+
+    // Assert
     expect(screen.getByText("Inkomsten")).toBeTruthy();
     expect(screen.getByText("EUR 100")).toBeTruthy();
     expect(screen.getByText("Uitgaven")).toBeTruthy();
@@ -88,6 +99,7 @@ describe("FinancialSummaryCards", () => {
 
 describe("MonthlyBalanceChart", () => {
   test("bad flow: toont lege staat zonder data", () => {
+    // Arrange
     render(
       <MonthlyBalanceChart
         monthlyChartData={[]}
@@ -95,12 +107,16 @@ describe("MonthlyBalanceChart", () => {
       />,
     );
 
+    // Act
+
+    // Assert
     expect(
       screen.getByText("De grafiek verschijnt zodra er transacties zijn."),
     ).toBeTruthy();
   });
 
   test("happy flow: toont grafiek met data", () => {
+    // Arrange
     render(
       <MonthlyBalanceChart
         monthlyChartData={[
@@ -116,6 +132,9 @@ describe("MonthlyBalanceChart", () => {
       />,
     );
 
+    // Act
+
+    // Assert
     expect(screen.getByTestId("line-chart")).toBeTruthy();
     expect(screen.getByText("Inkomsten")).toBeTruthy();
     expect(screen.getByText("Uitgaven")).toBeTruthy();
@@ -124,6 +143,7 @@ describe("MonthlyBalanceChart", () => {
 
 describe("ArchivedHouseholdBookList", () => {
   test("bad flow: toont lege archieflijst", () => {
+    // Arrange
     render(
       <ArchivedHouseholdBookList
         archivedBooks={[]}
@@ -131,12 +151,16 @@ describe("ArchivedHouseholdBookList", () => {
       />,
     );
 
+    // Act
+
+    // Assert
     expect(
       screen.getByText("Er zijn geen gearchiveerde huishoudboekjes."),
     ).toBeTruthy();
   });
 
   test("happy flow: herstellen roept callback aan", async () => {
+    // Arrange
     const user = userEvent.setup();
     const onRestoreAction = jest.fn();
 
@@ -147,14 +171,17 @@ describe("ArchivedHouseholdBookList", () => {
       />,
     );
 
+    // Act
     await user.click(screen.getByRole("button", { name: "Herstellen" }));
 
+    // Assert
     expect(onRestoreAction).toHaveBeenCalledWith("book-archive");
   });
 });
 
 describe("HouseholdBook feedback components", () => {
   test("toont niet beschikbaar melding", () => {
+    // Arrange
     render(
       <HouseholdBookNotAvailable
         title="Niet gevonden"
@@ -162,13 +189,20 @@ describe("HouseholdBook feedback components", () => {
       />,
     );
 
+    // Act
+
+    // Assert
     expect(screen.getByText("Niet gevonden")).toBeTruthy();
     expect(screen.getByText("Geen toegang")).toBeTruthy();
   });
 
   test("toont skeleton", () => {
+    // Arrange
     const { container } = render(<HouseholdBookSkeleton />);
 
+    // Act
+
+    // Assert
     expect(container.querySelector("main")).toBeTruthy();
   });
 });

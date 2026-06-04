@@ -23,6 +23,7 @@ function renderHouseholdBookForm(overrides = {}) {
 
 describe("HouseholdBookForm", () => {
   test("happy flow: nieuw huishoudboekje invullen en submitten", () => {
+    // Arrange
     const onNameChange = jest.fn();
     const onDescriptionChange = jest.fn();
     const onSubmit = jest.fn((event: React.FormEvent<HTMLFormElement>) =>
@@ -35,6 +36,7 @@ describe("HouseholdBookForm", () => {
       onSubmit,
     });
 
+    // Act
     fireEvent.change(screen.getByLabelText("Naam *"), {
       target: { value: "Vakantie" },
     });
@@ -43,20 +45,26 @@ describe("HouseholdBookForm", () => {
     });
     fireEvent.submit(screen.getByRole("button", { name: "Toevoegen" }));
 
+    // Assert
     expect(onNameChange).toHaveBeenCalledWith("Vakantie");
     expect(onDescriptionChange).toHaveBeenCalledWith("Uitgaven voor vakantie");
     expect(onSubmit).toHaveBeenCalledTimes(1);
   });
 
   test("bad flow: toont foutmelding", () => {
+    // Arrange
     renderHouseholdBookForm({
       errorMessage: "Naam is verplicht.",
     });
 
+    // Act
+
+    // Assert
     expect(screen.getByText("Naam is verplicht.")).toBeTruthy();
   });
 
   test("edit flow: toont annuleren en roept cancel aan", async () => {
+    // Arrange
     const user = userEvent.setup();
     const onCancel = jest.fn();
 
@@ -68,8 +76,10 @@ describe("HouseholdBookForm", () => {
 
     expect(screen.getByText("Huishoudboekje aanpassen")).toBeTruthy();
 
+    // Act
     await user.click(screen.getByRole("button", { name: "Annuleren" }));
 
+    // Assert
     expect(onCancel).toHaveBeenCalledTimes(1);
   });
 });

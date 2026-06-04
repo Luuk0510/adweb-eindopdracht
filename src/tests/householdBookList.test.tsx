@@ -17,6 +17,7 @@ const baseBook: HouseholdBook = {
 
 describe("HouseholdBookList", () => {
   test("toont een laadstatus", () => {
+    // Arrange
     render(
       <HouseholdBookList
         books={[]}
@@ -27,10 +28,14 @@ describe("HouseholdBookList", () => {
       />,
     );
 
+    // Act
+
+    // Assert
     expect(screen.getByText("Huishoudboekjes laden...")).toBeTruthy();
   });
 
   test("toont een lege staat als er geen boekjes zijn", () => {
+    // Arrange
     render(
       <HouseholdBookList
         books={[]}
@@ -41,10 +46,14 @@ describe("HouseholdBookList", () => {
       />,
     );
 
+    // Act
+
+    // Assert
     expect(screen.getByText("Nog geen huishoudboekjes")).toBeTruthy();
   });
 
   test("happy flow: eigenaar kan aanpassen en archiveren", async () => {
+    // Arrange
     const user = userEvent.setup();
     const onEditAction = jest.fn();
     const onArchiveAction = jest.fn();
@@ -59,9 +68,11 @@ describe("HouseholdBookList", () => {
       />,
     );
 
+    // Act
     await user.click(screen.getByRole("button", { name: "Aanpassen" }));
     await user.click(screen.getByRole("button", { name: "Archiveren" }));
 
+    // Assert
     expect(onEditAction).toHaveBeenCalledWith(
       "book-1",
       "Prive huishoudboekje",
@@ -73,6 +84,7 @@ describe("HouseholdBookList", () => {
   });
 
   test("bad flow: deelnemer ziet geen eigenaar-acties", () => {
+    // Arrange
     render(
       <HouseholdBookList
         books={[baseBook]}
@@ -83,6 +95,9 @@ describe("HouseholdBookList", () => {
       />,
     );
 
+    // Act
+
+    // Assert
     expect(screen.queryByRole("button", { name: "Aanpassen" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Archiveren" })).toBeNull();
     expect(screen.getByRole("link", { name: "Bekijken" })).toBeTruthy();

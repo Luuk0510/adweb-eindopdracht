@@ -40,6 +40,7 @@ function renderTransactionForm(overrides = {}) {
 
 describe("TransactionForm", () => {
   test("happy flow: geeft wijzigingen en submit door", () => {
+    // Arrange
     const onTitleChange = jest.fn();
     const onAmountChange = jest.fn();
     const onTypeChange = jest.fn();
@@ -56,6 +57,7 @@ describe("TransactionForm", () => {
       onSubmitAction,
     });
 
+    // Act
     fireEvent.change(screen.getByLabelText("Titel"), {
       target: { value: "Salaris" },
     });
@@ -70,6 +72,7 @@ describe("TransactionForm", () => {
     });
     fireEvent.submit(screen.getByRole("button", { name: "Toevoegen" }));
 
+    // Assert
     expect(onTitleChange).toHaveBeenCalledWith("Salaris");
     expect(onAmountChange).toHaveBeenCalledWith("1000");
     expect(onTypeChange).toHaveBeenCalledWith("income");
@@ -78,14 +81,19 @@ describe("TransactionForm", () => {
   });
 
   test("bad flow: toont foutmelding", () => {
+    // Arrange
     renderTransactionForm({
       errorMessage: "Vul minimaal de kosten in.",
     });
 
+    // Act
+
+    // Assert
     expect(screen.getByText("Vul minimaal de kosten in.")).toBeTruthy();
   });
 
   test("edit flow: toont annuleren en roept cancel aan", async () => {
+    // Arrange
     const user = userEvent.setup();
     const onCancelAction = jest.fn();
 
@@ -98,20 +106,27 @@ describe("TransactionForm", () => {
 
     expect(screen.getByText("Transactie aanpassen")).toBeTruthy();
 
+    // Act
     await user.click(screen.getByRole("button", { name: "Annuleren" }));
 
+    // Assert
     expect(onCancelAction).toHaveBeenCalledTimes(1);
   });
 
   test("bad flow: titelveld accepteert maximaal 50 tekens", () => {
+    // Arrange
     renderTransactionForm();
 
+    // Act
+
+    // Assert
     expect(screen.getByLabelText("Titel").getAttribute("maxlength")).toBe("50");
   });
 });
 
 describe("TransactionList", () => {
   test("toont lege staat zonder transacties", () => {
+    // Arrange
     render(
       <TransactionList
         transactions={[]}
@@ -123,12 +138,16 @@ describe("TransactionList", () => {
       />,
     );
 
+    // Act
+
+    // Assert
     expect(
       screen.getByText("Er zijn nog geen transacties voor deze maand."),
     ).toBeTruthy();
   });
 
   test("happy flow: toont transactie en roept aanpassen aan", async () => {
+    // Arrange
     const user = userEvent.setup();
     const onEditAction = jest.fn();
 
@@ -143,15 +162,18 @@ describe("TransactionList", () => {
       />,
     );
 
+    // Act
     expect(screen.getByText("Boodschappen")).toBeTruthy();
     expect(screen.getByText("-EUR 25")).toBeTruthy();
 
     await user.click(screen.getByRole("button", { name: "Aanpassen" }));
 
+    // Assert
     expect(onEditAction).toHaveBeenCalledWith(expenseTransaction);
   });
 
   test("bad flow: verwijderen vraagt eerst bevestiging en kan annuleren", async () => {
+    // Arrange
     const user = userEvent.setup();
     const onDeleteAction = jest.fn();
 
@@ -166,8 +188,10 @@ describe("TransactionList", () => {
       />,
     );
 
+    // Act
     await user.click(screen.getByRole("button", { name: "Verwijderen" }));
 
+    // Assert
     expect(
       screen.getByText("Weet je zeker dat je deze transactie wilt verwijderen?"),
     ).toBeTruthy();
@@ -179,6 +203,7 @@ describe("TransactionList", () => {
   });
 
   test("happy flow: verwijderen na bevestiging", async () => {
+    // Arrange
     const user = userEvent.setup();
     const onDeleteAction = jest.fn();
 
@@ -193,9 +218,11 @@ describe("TransactionList", () => {
       />,
     );
 
+    // Act
     await user.click(screen.getByRole("button", { name: "Verwijderen" }));
     await user.click(screen.getByRole("button", { name: "Ja, verwijderen" }));
 
+    // Assert
     expect(onDeleteAction).toHaveBeenCalledWith("transaction-1");
   });
 });
