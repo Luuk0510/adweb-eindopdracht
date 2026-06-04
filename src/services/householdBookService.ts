@@ -400,6 +400,7 @@ type TransactionInput = {
   amount: number;
   type: "expense" | "income";
   date: Date;
+  categoryId: string | null;
 };
 
 function getTransactionTitle(title: string) {
@@ -466,7 +467,7 @@ export async function createTransaction(
 
   const newTransaction = await addDoc(transactionsCollection, {
     bookId,
-    categoryId: null,
+    categoryId: transaction.categoryId,
     type: transaction.type,
     title: getTransactionTitle(transaction.title),
     amount: transaction.amount,
@@ -564,6 +565,7 @@ export async function updateTransaction(
     title: getTransactionTitle(transaction.title),
     amount: transaction.amount,
     date: transaction.date,
+    categoryId: transaction.categoryId,
     updatedAt: serverTimestamp(),
   });
 
