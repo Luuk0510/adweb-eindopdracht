@@ -52,6 +52,8 @@ export function useHouseholdBooks(user: User | null) {
   if (!user) {
     return {
       books: [],
+      ownerBooks: [],
+      participantBooks: [],
       archivedBooks: [],
       isLoading: false,
     };
@@ -71,6 +73,8 @@ export function useHouseholdBooks(user: User | null) {
 
   return {
     books: mergeHouseholdBooks(currentOwnerBooks, currentParticipantBooks),
+    ownerBooks: sortBooksByName(currentOwnerBooks),
+    participantBooks: sortBooksByName(currentParticipantBooks),
     archivedBooks: currentArchivedBooks,
     isLoading,
   };

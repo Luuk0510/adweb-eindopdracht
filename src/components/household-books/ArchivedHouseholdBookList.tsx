@@ -25,7 +25,7 @@ export function ArchivedHouseholdBookList({
           {archivedBooks.map((book) => (
             <article
               key={book.id}
-              className="rounded-xl border border-gray-200 bg-gray-50 p-5 text-gray-900"
+              className="rounded-xl border border-gray-200 bg-gray-100 p-5 text-gray-900"
             >
               <h3 className="text-xl font-semibold">{book.name}</h3>
 

@@ -10,6 +10,8 @@ type HouseholdBookListProps = {
   books: HouseholdBook[];
   isLoading: boolean;
   currentUserId: string;
+  emptyTitle?: string;
+  emptyMessage?: string;
   onEditAction: (
     bookId: string,
     bookName: string,
@@ -22,6 +24,8 @@ export function HouseholdBookList({
   books,
   isLoading,
   currentUserId,
+  emptyTitle = "Nog geen huishoudboekjes",
+  emptyMessage = "Maak je eerste huishoudboekje aan met het formulier hierboven.",
   onEditAction,
   onArchiveAction,
 }: HouseholdBookListProps) {
@@ -36,10 +40,8 @@ export function HouseholdBookList({
   if (books.length === 0) {
     return (
       <section className="rounded-xl border border-dashed border-gray-300 bg-white p-8 text-center text-gray-900">
-        <h2 className="text-xl font-semibold">Nog geen huishoudboekjes</h2>
-        <p className="mt-2 text-gray-600">
-          Maak je eerste huishoudboekje aan met het formulier hierboven.
-        </p>
+        <h2 className="text-xl font-semibold">{emptyTitle}</h2>
+        <p className="mt-2 text-gray-600">{emptyMessage}</p>
       </section>
     );
   }
