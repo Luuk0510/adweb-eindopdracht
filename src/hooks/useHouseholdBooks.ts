@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { User } from "firebase/auth";
 import { HouseholdBook } from "@/types/householdBook";
 import {
+  getParticipantHouseholdBooks,
   listenToActiveHouseholdBooks,
   listenToArchivedHouseholdBooks,
   listenToParticipantHouseholdBooks,
@@ -19,6 +20,26 @@ export function useHouseholdBooks(user: User | null) {
     if (!user) {
       return;
     }
+
+    let isMounted = true;
+
+    async function loadParticipantBooks() {
+      if (!user) {
+        return;
+      }
+
+      try {
+        const sharedBooks = await getParticipantHouseholdBooks(user.uid);
+
+        if (isMounted) {
+          setParticipantBooks(sharedBooks);
+        }
+      } catch (error) {
+        console.error("Gedeelde huishoudboekjes laden is niet gelukt.", error);
+      }
+    }
+
+    void loadParticipantBooks();
 
     const unsubscribeActiveBooks = listenToActiveHouseholdBooks(
       user.uid,
@@ -43,6 +64,7 @@ export function useHouseholdBooks(user: User | null) {
     );
 
     return () => {
+      isMounted = false;
       unsubscribeActiveBooks();
       unsubscribeArchivedBooks();
       unsubscribeParticipantBooks();
@@ -57,9 +79,21 @@ export function useHouseholdBooks(user: User | null) {
     };
   }
 
+  const currentOwnerBooks = ownerBooks.filter((book) => {
+    return book.ownerId === user.uid;
+  });
+
+  const currentParticipantBooks = participantBooks.filter((book) => {
+    return book.ownerId !== user.uid && book.participantIds.includes(user.uid);
+  });
+
+  const currentArchivedBooks = archivedBooks.filter((book) => {
+    return book.ownerId === user.uid;
+  });
+
   return {
-    books: mergeHouseholdBooks(ownerBooks, participantBooks),
-    archivedBooks,
+    books: mergeHouseholdBooks(currentOwnerBooks, currentParticipantBooks),
+    archivedBooks: currentArchivedBooks,
     isLoading,
   };
 }

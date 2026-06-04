@@ -208,6 +208,24 @@ export function listenToParticipantHouseholdBooks(
   );
 }
 
+export async function getParticipantHouseholdBooks(userId: string) {
+  const householdBooksQuery = query(
+    householdBooksCollection,
+    where("participantIds", "array-contains", userId),
+  );
+
+  const snapshot = await getDocs(householdBooksQuery);
+
+  return snapshot.docs
+    .map((document: QueryDocumentSnapshot<DocumentData>) =>
+      mapHouseholdBook(document.id, document.data()),
+    )
+    .filter((book) => !book.isArchived)
+    .sort((firstBook, secondBook) => {
+      return firstBook.name.localeCompare(secondBook.name, "nl-NL");
+    });
+}
+
 export function listenToArchivedHouseholdBooks(
   userId: string,
   callback: (books: HouseholdBook[]) => void,
