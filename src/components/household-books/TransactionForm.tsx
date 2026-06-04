@@ -1,6 +1,6 @@
 "use client";
 
-import { SubmitEvent } from "react";
+import { SubmitEvent, useId } from "react";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import { SecondaryButton } from "@/components/ui/SecondaryButton";
 import { Category } from "@/types/category";
@@ -40,6 +40,11 @@ export function TransactionForm({
   onSubmitAction,
   onCancelAction,
 }: TransactionFormProps) {
+  const titleId = useId();
+  const amountId = useId();
+  const typeId = useId();
+  const dateId = useId();
+
   return (
     <article className="mt-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
       <h2 className="text-lg font-semibold text-slate-950">
@@ -50,10 +55,14 @@ export function TransactionForm({
 
       <form onSubmit={onSubmitAction} className="mt-4 space-y-4">
         <div>
-          <label className="block text-sm font-medium text-slate-700">
+          <label
+            className="block text-sm font-medium text-slate-700"
+            htmlFor={titleId}
+          >
             Titel
           </label>
           <input
+            id={titleId}
             className="mt-1 w-full rounded-lg border border-slate-300 p-2"
             value={title}
             onChange={(event) => onTitleChange(event.target.value)}
@@ -63,10 +72,14 @@ export function TransactionForm({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-700">
+          <label
+            className="block text-sm font-medium text-slate-700"
+            htmlFor={amountId}
+          >
             Kosten *
           </label>
           <input
+            id={amountId}
             className="mt-1 w-full rounded-lg border border-slate-300 p-2"
             type="number"
             min="0.01"
@@ -78,10 +91,14 @@ export function TransactionForm({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-700">
+          <label
+            className="block text-sm font-medium text-slate-700"
+            htmlFor={typeId}
+          >
             Soort
           </label>
           <select
+            id={typeId}
             className="mt-1 w-full rounded-lg border border-slate-300 p-2"
             value={type}
             onChange={(event) =>
@@ -116,6 +133,7 @@ export function TransactionForm({
             Datum
           </label>
           <input
+            id={dateId}
             className="mt-1 w-full rounded-lg border border-slate-300 p-2"
             type="date"
             value={date}
