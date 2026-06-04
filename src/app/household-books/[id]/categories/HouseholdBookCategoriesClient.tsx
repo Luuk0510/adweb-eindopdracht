@@ -276,6 +276,8 @@ export function HouseholdBookCategoriesClient({
     );
   }
 
+  const canManageCategories = book.ownerId === user?.uid;
+
   return (
     <main className="mx-auto max-w-6xl p-8">
       <div className="flex items-center justify-between gap-4">
@@ -293,73 +295,75 @@ export function HouseholdBookCategoriesClient({
         </p>
       </section>
 
-      <section className="mt-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 className="text-xl font-semibold text-gray-900">
-          {editingCategoryId ? "Categorie aanpassen" : "Categorie toevoegen"}
-        </h2>
+      {canManageCategories && (
+        <section className="mt-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+          <h2 className="text-xl font-semibold text-gray-900">
+            {editingCategoryId ? "Categorie aanpassen" : "Categorie toevoegen"}
+          </h2>
 
-        <form className="mt-4 grid gap-4 md:grid-cols-2" onSubmit={handleCategorySubmit}>
-          <label className="block text-sm text-gray-700">
-            Naam
-            <input
-              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
-              value={categoryName}
-              onChange={(event) => setCategoryName(event.target.value)}
-              required
-            />
-          </label>
+          <form className="mt-4 grid gap-4 md:grid-cols-2" onSubmit={handleCategorySubmit}>
+            <label className="block text-sm text-gray-700">
+              Naam
+              <input
+                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+                value={categoryName}
+                onChange={(event) => setCategoryName(event.target.value)}
+                required
+              />
+            </label>
 
-          <label className="block text-sm text-gray-700">
-            Maximaal budget
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
-              value={maxBudgetInput}
-              onChange={(event) => setMaxBudgetInput(event.target.value)}
-              required
-            />
-          </label>
+            <label className="block text-sm text-gray-700">
+              Maximaal budget
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+                value={maxBudgetInput}
+                onChange={(event) => setMaxBudgetInput(event.target.value)}
+                required
+              />
+            </label>
 
-          <label className="block text-sm text-gray-700 md:col-span-2">
-            Einddatum (optioneel)
-            <input
-              type="date"
-              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 md:max-w-xs"
-              value={endDateInput}
-              onChange={(event) => setEndDateInput(event.target.value)}
-            />
-          </label>
+            <label className="block text-sm text-gray-700 md:col-span-2">
+              Einddatum (optioneel)
+              <input
+                type="date"
+                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 md:max-w-xs"
+                value={endDateInput}
+                onChange={(event) => setEndDateInput(event.target.value)}
+              />
+            </label>
 
-          {formMessage ? (
-            <p className="md:col-span-2 rounded-lg bg-gray-50 px-3 py-2 text-sm text-gray-700">
-              {formMessage}
-            </p>
-          ) : null}
+            {formMessage ? (
+              <p className="md:col-span-2 rounded-lg bg-gray-50 px-3 py-2 text-sm text-gray-700">
+                {formMessage}
+              </p>
+            ) : null}
 
-          <div className="md:col-span-2 flex flex-wrap gap-3">
-            <button
-              className="rounded-lg bg-black px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-              type="submit"
-              disabled={isSubmitting}
-            >
-              {editingCategoryId ? "Opslaan" : "Toevoegen"}
-            </button>
-
-            {editingCategoryId ? (
+            <div className="md:col-span-2 flex flex-wrap gap-3">
               <button
-                className="rounded-lg border px-4 py-2 text-sm font-medium"
-                type="button"
-                onClick={resetForm}
+                className="rounded-lg bg-black px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+                type="submit"
                 disabled={isSubmitting}
               >
-                Annuleren
+                {editingCategoryId ? "Opslaan" : "Toevoegen"}
               </button>
-            ) : null}
-          </div>
-        </form>
-      </section>
+
+              {editingCategoryId ? (
+                <button
+                  className="rounded-lg border px-4 py-2 text-sm font-medium"
+                  type="button"
+                  onClick={resetForm}
+                  disabled={isSubmitting}
+                >
+                  Annuleren
+                </button>
+              ) : null}
+            </div>
+          </form>
+        </section>
+      )}
 
       {categoryOverviews.length === 0 ? (
         <section className="mt-6 rounded-xl border border-dashed border-gray-300 bg-white p-8 text-center">
@@ -432,33 +436,35 @@ export function HouseholdBookCategoriesClient({
                   </p>
                 </div>
 
-                <div className="mt-5 flex gap-3">
-                  <button
-                    className="rounded-lg border border-gray-400 px-3 py-2 text-xs font-medium"
-                    type="button"
-                    onClick={() => {
-                      const sourceCategory = categories.find(
-                        (item) => item.id === category.id,
-                      );
+                {canManageCategories && (
+                  <div className="mt-5 flex gap-3">
+                    <button
+                      className="rounded-lg border border-gray-400 px-3 py-2 text-xs font-medium"
+                      type="button"
+                      onClick={() => {
+                        const sourceCategory = categories.find(
+                          (item) => item.id === category.id,
+                        );
 
-                      if (sourceCategory) {
-                        startEditingCategory(sourceCategory);
-                      }
-                    }}
-                    disabled={isSubmitting}
-                  >
-                    Aanpassen
-                  </button>
+                        if (sourceCategory) {
+                          startEditingCategory(sourceCategory);
+                        }
+                      }}
+                      disabled={isSubmitting}
+                    >
+                      Aanpassen
+                    </button>
 
-                  <button
-                    className="rounded-lg border border-rose-400 px-3 py-2 text-xs font-medium text-rose-700"
-                    type="button"
-                    onClick={() => void handleDeleteCategory(category.id)}
-                    disabled={isSubmitting}
-                  >
-                    Verwijderen
-                  </button>
-                </div>
+                    <button
+                      className="rounded-lg border border-rose-400 px-3 py-2 text-xs font-medium text-rose-700"
+                      type="button"
+                      onClick={() => void handleDeleteCategory(category.id)}
+                      disabled={isSubmitting}
+                    >
+                      Verwijderen
+                    </button>
+                  </div>
+                )}
               </article>
             );
           })}

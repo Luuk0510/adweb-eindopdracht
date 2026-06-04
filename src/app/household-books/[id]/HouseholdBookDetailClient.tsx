@@ -74,6 +74,7 @@ export function HouseholdBookDetailClient({
         title={`Overzicht van ${book.name}`}
         description={book.description || "Geen omschrijving ingevuld."}
         categoryOverviewHref={`/household-books/${bookId}/categories`}
+        canManage={book.ownerId === user?.uid}
       />
     </main>
   );

@@ -458,6 +458,10 @@ export async function createTransaction(
     throw new Error("Huishoudboekje niet gevonden.");
   }
 
+  if (book.ownerId !== userId) {
+    throw new Error("Alleen de eigenaar mag transacties toevoegen.");
+  }
+
   if (transaction.amount <= 0) {
     throw new Error("Kosten zijn verplicht.");
   }
@@ -542,6 +546,10 @@ export async function updateTransaction(
     throw new Error("Huishoudboekje niet gevonden.");
   }
 
+  if (book.ownerId !== userId) {
+    throw new Error("Alleen de eigenaar mag transacties aanpassen.");
+  }
+
   if (transaction.amount <= 0) {
     throw new Error("Kosten zijn verplicht.");
   }
@@ -609,6 +617,10 @@ export async function deleteTransaction(
 
   if (!book) {
     throw new Error("Huishoudboekje niet gevonden.");
+  }
+
+  if (book.ownerId !== userId) {
+    throw new Error("Alleen de eigenaar mag transacties verwijderen.");
   }
 
   const transactionReference = doc(db, "transactions", transactionId);
