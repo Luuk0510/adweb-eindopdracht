@@ -83,7 +83,7 @@ export function HouseholdBookMembersClient({
   }
 
   return (
-    <main className="mx-auto w-full max-w-7xl p-8">
+    <main className="mx-auto w-full max-w-4xl p-8">
       <Link className="text-sm underline" href="/dashboard">
         Terug naar dashboard
       </Link>

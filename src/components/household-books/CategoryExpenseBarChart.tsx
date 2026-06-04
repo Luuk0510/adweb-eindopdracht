@@ -42,9 +42,6 @@ export function CategoryExpenseBarChart({
           <p className="text-base font-medium text-slate-900">
             De staafdiagram verschijnt zodra er uitgaven zijn.
           </p>
-          <p className="mt-2 text-sm text-slate-500">
-            Koppel uitgaven aan categorieën om ze hier te vergelijken.
-          </p>
         </div>
       ) : (
         <div className="mt-6 h-80 min-h-80 min-w-0 rounded-xl border border-slate-200 bg-white p-4">

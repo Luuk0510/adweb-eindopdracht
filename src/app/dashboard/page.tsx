@@ -110,14 +110,14 @@ export default function DashboardPage() {
 
   if (isCheckingAuth) {
     return (
-      <main className="mx-auto max-w-5xl p-8">
+      <main className="mx-auto max-w-4xl p-8">
         <p>Login controleren...</p>
       </main>
     );
   }
 
   return (
-    <main className="mx-auto max-w-5xl p-8">
+    <main className="mx-auto max-w-4xl p-8">
       <section className="mb-8 flex items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold">Mijn huishoudboekjes</h1>

@@ -46,10 +46,6 @@ export function MonthlyBalanceChart({
           <p className="text-base font-medium text-slate-900">
             De grafiek verschijnt zodra er transacties zijn.
           </p>
-          <p className="mt-2 text-sm text-slate-500">
-            Voeg inkomsten of uitgaven toe om de maandelijkse trend te
-            zien.
-          </p>
         </div>
       ) : (
         <div className="mt-6 h-80 min-h-80 min-w-0 rounded-xl border border-slate-200 bg-white p-4">

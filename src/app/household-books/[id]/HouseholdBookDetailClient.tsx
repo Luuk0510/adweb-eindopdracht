@@ -64,32 +64,16 @@ export function HouseholdBookDetailClient({
   }
 
   return (
-    <main className="mx-auto max-w-6xl p-8">
+    <main className="mx-auto max-w-7xl p-8">
       <Link className="text-sm underline" href="/dashboard">
         Terug naar dashboard
       </Link>
 
-      <section className="mt-6 rounded-xl border border-gray-200 bg-white p-6 text-gray-900 shadow-sm">
-        <h1 className="text-3xl font-bold">{book.name}</h1>
-
-        <p className="mt-4 text-sm leading-6 text-gray-600">
-          {book.description || "Geen omschrijving ingevuld."}
-        </p>
-
-        <div className="mt-4">
-          <Link
-            className="rounded-lg border px-3 py-2 text-sm font-medium"
-            href={`/household-books/${bookId}/categories`}
-          >
-            Categorie overzicht
-          </Link>
-        </div>
-      </section>
-
       <FinancialOverview
         bookId={bookId}
-        title="Overzicht van uitgaven en inkomsten"
-        description="Bekijk je financiële bewegingen op datum, filter per maand en zie meteen welke balans je opbouwt binnen dit huishoudboekje."
+        title={`Overzicht van ${book.name}`}
+        description={book.description || "Geen omschrijving ingevuld."}
+        categoryOverviewHref={`/household-books/${bookId}/categories`}
       />
     </main>
   );
