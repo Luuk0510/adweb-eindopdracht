@@ -68,12 +68,19 @@ function mergeHouseholdBooks(
   ownerBooks: HouseholdBook[],
   participantBooks: HouseholdBook[],
 ) {
-  const booksById = new Map<string, HouseholdBook>();
+  const ownerBookIds = new Set(ownerBooks.map((book) => book.id));
+  const sharedBooks = participantBooks.filter(
+    (book) => !ownerBookIds.has(book.id),
+  );
 
-  ownerBooks.forEach((book) => booksById.set(book.id, book));
-  participantBooks.forEach((book) => booksById.set(book.id, book));
+  return [
+    ...sortBooksByName(ownerBooks),
+    ...sortBooksByName(sharedBooks),
+  ];
+}
 
-  return Array.from(booksById.values()).sort((firstBook, secondBook) => {
-    return secondBook.createdAt.getTime() - firstBook.createdAt.getTime();
+function sortBooksByName(books: HouseholdBook[]) {
+  return [...books].sort((firstBook, secondBook) => {
+    return firstBook.name.localeCompare(secondBook.name, "nl-NL");
   });
 }
