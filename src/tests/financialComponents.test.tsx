@@ -2,7 +2,8 @@ import { jest, test, expect, describe } from "@jest/globals";
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ArchivedHouseholdBookList } from "@/components/household-books/ArchivedHouseholdBookList";
-import { FinancialHeader } from "@/components/household-books/FinancialHeader";
+import { CategoryExpenseBarChart } from "@/components/household-books/CategoryExpenseBarChart";
+import { FinancialHeader } from "../components/household-books/FinancialHeader";
 import { FinancialSummaryCards } from "@/components/household-books/FinancialSummaryCards";
 import { HouseholdBookNotAvailable } from "@/components/household-books/HouseholdBookNotAvailable";
 import { HouseholdBookSkeleton } from "@/components/household-books/HouseholdBookSkeleton";
@@ -31,7 +32,7 @@ describe("FinancialHeader", () => {
         description="Bekijk je balans"
         effectiveMonth="2026-06"
         availableMonths={["2026-06", "2026-05"]}
-        getMonthLabel={(month) => month}
+        getMonthLabel={(month: string) => month}
         onMonthChange={onMonthChange}
       />,
     );
@@ -54,7 +55,7 @@ describe("FinancialHeader", () => {
         description="Bekijk je balans"
         effectiveMonth="2026-06"
         availableMonths={[]}
-        getMonthLabel={(month) => `Maand ${month}`}
+        getMonthLabel={(month: string) => `Maand ${month}`}
         onMonthChange={jest.fn()}
       />,
     );
@@ -137,6 +138,46 @@ describe("MonthlyBalanceChart", () => {
     // Assert
     expect(screen.getByTestId("line-chart")).toBeTruthy();
     expect(screen.getByText("Inkomsten")).toBeTruthy();
+    expect(screen.getByText("Uitgaven")).toBeTruthy();
+  });
+});
+
+describe("CategoryExpenseBarChart", () => {
+  test("bad flow: toont lege staat zonder data", () => {
+    // Arrange
+    render(
+      <CategoryExpenseBarChart
+        categoryExpenseData={[]}
+        formatCurrency={(amount) => `EUR ${amount}`}
+      />,
+    );
+
+    // Act
+
+    // Assert
+    expect(
+      screen.getByText("De staafdiagram verschijnt zodra er uitgaven zijn."),
+    ).toBeTruthy();
+  });
+
+  test("happy flow: toont staafdiagram met data", () => {
+    // Arrange
+    render(
+      <CategoryExpenseBarChart
+        categoryExpenseData={[
+          {
+            categoryName: "Boodschappen",
+            amount: 250,
+          },
+        ]}
+        formatCurrency={(amount) => `EUR ${amount}`}
+      />,
+    );
+
+    // Act
+
+    // Assert
+    expect(screen.getByTestId("bar-chart")).toBeTruthy();
     expect(screen.getByText("Uitgaven")).toBeTruthy();
   });
 });
