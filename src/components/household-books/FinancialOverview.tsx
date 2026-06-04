@@ -41,6 +41,7 @@ type FinancialOverviewProps = {
   title: string;
   description: string;
   categoryOverviewHref: string;
+  canManage: boolean;
 };
 
 export function FinancialOverview({
@@ -48,6 +49,7 @@ export function FinancialOverview({
   title,
   description,
   categoryOverviewHref,
+  canManage,
 }: FinancialOverviewProps) {
   const { user, isCheckingAuth } = useAuthRedirect();
 
@@ -396,7 +398,13 @@ export function FinancialOverview({
         />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+      <div
+        className={
+          canManage
+            ? "grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]"
+            : "grid gap-6"
+        }
+      >
         <div>
           <TransactionList
             transactions={monthlyTransactions}
@@ -404,35 +412,38 @@ export function FinancialOverview({
             effectiveMonth={effectiveMonth}
             formatDate={formatDate}
             formatCurrency={formatCurrency}
+            canManage={canManage}
             onEditAction={startEditingTransaction}
             onDeleteAction={handleDeleteTransaction}
           />
         </div>
 
-        <aside className="lg:sticky lg:top-6 lg:self-start">
-          <TransactionForm
-            title={transactionTitle}
-            amount={transactionAmount}
-            type={transactionType}
-            categoryId={transactionCategoryId}
-            categories={categories}
-            date={transactionDate}
-            editingTransactionId={editingTransactionId}
-            errorMessage={transactionErrorMessage}
-            onTitleChange={setTransactionTitle}
-            onAmountChange={setTransactionAmount}
-            onTypeChange={setTransactionType}
-            onCategoryChange={setTransactionCategoryId}
-            onDateChange={setTransactionDate}
-            onSubmitAction={handleTransactionSubmit}
-            onCancelAction={resetTransactionForm}
-          />
+        {canManage && (
+          <aside className="lg:sticky lg:top-6 lg:self-start">
+            <TransactionForm
+              title={transactionTitle}
+              amount={transactionAmount}
+              type={transactionType}
+              categoryId={transactionCategoryId}
+              categories={categories}
+              date={transactionDate}
+              editingTransactionId={editingTransactionId}
+              errorMessage={transactionErrorMessage}
+              onTitleChange={setTransactionTitle}
+              onAmountChange={setTransactionAmount}
+              onTypeChange={setTransactionType}
+              onCategoryChange={setTransactionCategoryId}
+              onDateChange={setTransactionDate}
+              onSubmitAction={handleTransactionSubmit}
+              onCancelAction={resetTransactionForm}
+            />
 
-          <CategoryDropZone
-            categories={categories}
-            onDropAction={handleDropTransactionOnCategory}
-          />
-        </aside>
+            <CategoryDropZone
+              categories={categories}
+              onDropAction={handleDropTransactionOnCategory}
+            />
+          </aside>
+        )}
       </div>
     </section>
   );

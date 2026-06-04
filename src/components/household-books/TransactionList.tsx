@@ -11,6 +11,7 @@ type TransactionListProps = {
   effectiveMonth: string;
   formatDate: (date: Date) => string;
   formatCurrency: (amount: number) => string;
+  canManage?: boolean;
   onEditAction: (transaction: Transaction) => void;
   onDeleteAction: (transactionId: string) => void;
 };
@@ -20,6 +21,7 @@ export function TransactionList({
   categories,
   formatDate,
   formatCurrency,
+  canManage = true,
   onEditAction,
   onDeleteAction,
 }: TransactionListProps) {
@@ -60,13 +62,19 @@ export function TransactionList({
               return (
                 <li
                   key={transaction.id}
-                  draggable={!isDeleting}
+                  draggable={canManage && !isDeleting}
                   className={`max-w-full rounded-xl border p-4 shadow-sm transition hover:border-slate-300 ${
                     isDeleting
                       ? "border-red-200 bg-red-50"
-                      : "cursor-grab border-slate-200 bg-white active:cursor-grabbing"
+                      : canManage
+                        ? "cursor-grab border-slate-200 bg-white active:cursor-grabbing"
+                        : "border-slate-200 bg-white"
                   }`}
                   onDragStart={(event) => {
+                    if (!canManage) {
+                      return;
+                    }
+
                     event.dataTransfer.setData(
                       "transactionId",
                       transaction.id,
@@ -142,25 +150,27 @@ export function TransactionList({
                         {formatCurrency(transaction.amount)}
                       </p>
 
-                      <div className="flex flex-wrap justify-end gap-2">
-                        <SecondaryButton
-                          className="py-1 text-xs"
-                          type="button"
-                          onClick={() => onEditAction(transaction)}
-                        >
-                          Aanpassen
-                        </SecondaryButton>
-                        <SecondaryButton
-                          className="py-1 text-xs"
-                          variant="danger"
-                          type="button"
-                          onClick={() =>
-                            setTransactionIdToDelete(transaction.id)
-                          }
-                        >
-                          Verwijderen
-                        </SecondaryButton>
-                      </div>
+                      {canManage && (
+                        <div className="flex flex-wrap justify-end gap-2">
+                          <SecondaryButton
+                            className="py-1 text-xs"
+                            type="button"
+                            onClick={() => onEditAction(transaction)}
+                          >
+                            Aanpassen
+                          </SecondaryButton>
+                          <SecondaryButton
+                            className="py-1 text-xs"
+                            variant="danger"
+                            type="button"
+                            onClick={() =>
+                              setTransactionIdToDelete(transaction.id)
+                            }
+                          >
+                            Verwijderen
+                          </SecondaryButton>
+                        </div>
+                      )}
                     </div>
                   </div>
                   )}

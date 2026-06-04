@@ -81,20 +81,20 @@ service cloud.firestore {
 
       allow create: if isAuthenticated()
         && request.resource.data.bookId is string
-        && canAccessBook(request.resource.data.bookId)
+        && isBookOwner(request.resource.data.bookId)
         && request.resource.data.createdBy == request.auth.uid
         && request.resource.data.amount is number
         && request.resource.data.amount > 0
         && request.resource.data.type in ["expense", "income"];
 
-      allow update: if canAccessBook(resource.data.bookId)
+      allow update: if isBookOwner(resource.data.bookId)
         && request.resource.data.bookId == resource.data.bookId
         && request.resource.data.createdBy == resource.data.createdBy
         && request.resource.data.amount is number
         && request.resource.data.amount > 0
         && request.resource.data.type in ["expense", "income"];
 
-      allow delete: if canAccessBook(resource.data.bookId);
+      allow delete: if isBookOwner(resource.data.bookId);
     }
   }
 }
