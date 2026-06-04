@@ -43,7 +43,7 @@ export function TransactionForm({
   const titleId = useId();
   const amountId = useId();
   const typeId = useId();
-  const categoryIdInput = useId();
+  const categorySelectId = useId();
   const dateId = useId();
 
   return (
@@ -114,12 +114,12 @@ export function TransactionForm({
         <div>
           <label
             className="block text-sm font-medium text-slate-700"
-            htmlFor={categoryIdInput}
+            htmlFor={categorySelectId}
           >
             Categorie
           </label>
           <select
-            id={categoryIdInput}
+            id={categorySelectId}
             className="mt-1 w-full rounded-lg border border-slate-300 p-2"
             value={categoryId}
             onChange={(event) => onCategoryChange(event.target.value)}

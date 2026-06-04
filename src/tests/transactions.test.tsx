@@ -1,8 +1,10 @@
 import { jest, test, expect, describe } from "@jest/globals";
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { CategoryDropZone } from "@/components/household-books/CategoryDropZone";
 import { TransactionForm } from "@/components/household-books/TransactionForm";
 import { TransactionList } from "@/components/household-books/TransactionList";
+import { Category } from "@/types/category";
 import { Transaction } from "@/types/transaction";
 
 const expenseTransaction: Transaction = {
@@ -18,6 +20,21 @@ const expenseTransaction: Transaction = {
   updatedAt: new Date("2026-06-03"),
 };
 
+const groceriesCategory: Category = {
+  id: "category-1",
+  bookId: "book-1",
+  name: "Dagelijkse boodschappen",
+  maxBudget: 200,
+  endDate: null,
+  createdAt: new Date("2026-06-03"),
+  updatedAt: new Date("2026-06-03"),
+};
+
+const categorizedExpenseTransaction: Transaction = {
+  ...expenseTransaction,
+  categoryId: groceriesCategory.id,
+};
+
 function renderTransactionForm(overrides = {}) {
   return render(
     <TransactionForm
@@ -25,7 +42,7 @@ function renderTransactionForm(overrides = {}) {
       amount=""
       type="expense"
       categoryId=""
-      categories={[]}
+      categories={[groceriesCategory]}
       date="2026-06-03"
       editingTransactionId={null}
       errorMessage=""
@@ -47,6 +64,7 @@ describe("TransactionForm", () => {
     const onTitleChange = jest.fn();
     const onAmountChange = jest.fn();
     const onTypeChange = jest.fn();
+    const onCategoryChange = jest.fn();
     const onDateChange = jest.fn();
     const onSubmitAction = jest.fn((event: React.FormEvent<HTMLFormElement>) =>
       event.preventDefault(),
@@ -56,6 +74,7 @@ describe("TransactionForm", () => {
       onTitleChange,
       onAmountChange,
       onTypeChange,
+      onCategoryChange,
       onDateChange,
       onSubmitAction,
     });
@@ -70,6 +89,9 @@ describe("TransactionForm", () => {
     fireEvent.change(screen.getByLabelText("Soort"), {
       target: { value: "income" },
     });
+    fireEvent.change(screen.getByLabelText("Categorie"), {
+      target: { value: "category-1" },
+    });
     fireEvent.change(screen.getByLabelText("Datum"), {
       target: { value: "2026-06-04" },
     });
@@ -79,6 +101,7 @@ describe("TransactionForm", () => {
     expect(onTitleChange).toHaveBeenCalledWith("Salaris");
     expect(onAmountChange).toHaveBeenCalledWith("1000");
     expect(onTypeChange).toHaveBeenCalledWith("income");
+    expect(onCategoryChange).toHaveBeenCalledWith("category-1");
     expect(onDateChange).toHaveBeenCalledWith("2026-06-04");
     expect(onSubmitAction).toHaveBeenCalledTimes(1);
   });
@@ -127,12 +150,49 @@ describe("TransactionForm", () => {
   });
 });
 
+describe("CategoryDropZone", () => {
+  test("happy flow: transactie naar categorie slepen", () => {
+    // Arrange
+    const onDropAction = jest.fn();
+
+    render(
+      <CategoryDropZone
+        categories={[groceriesCategory]}
+        onDropAction={onDropAction}
+      />,
+    );
+
+    // Act
+    fireEvent.drop(screen.getByText("Dagelijkse boodschappen"), {
+      dataTransfer: {
+        getData: () => "transaction-1",
+      },
+    });
+
+    // Assert
+    expect(onDropAction).toHaveBeenCalledWith("transaction-1", "category-1");
+  });
+
+  test("bad flow: toont melding zonder categorieën", () => {
+    // Arrange
+    render(<CategoryDropZone categories={[]} onDropAction={jest.fn()} />);
+
+    // Act
+
+    // Assert
+    expect(
+      screen.getByText("Maak eerst categorieën aan om transacties eraan te koppelen."),
+    ).toBeTruthy();
+  });
+});
+
 describe("TransactionList", () => {
   test("toont lege staat zonder transacties", () => {
     // Arrange
     render(
       <TransactionList
         transactions={[]}
+        categories={[]}
         effectiveMonth="2026-06"
         formatDate={(date) => date.toISOString()}
         formatCurrency={(amount) => `EUR ${amount}`}
@@ -156,7 +216,8 @@ describe("TransactionList", () => {
 
     render(
       <TransactionList
-        transactions={[expenseTransaction]}
+        transactions={[categorizedExpenseTransaction]}
+        categories={[groceriesCategory]}
         effectiveMonth="2026-06"
         formatDate={() => "03 jun 2026"}
         formatCurrency={(amount) => `EUR ${amount}`}
@@ -172,7 +233,8 @@ describe("TransactionList", () => {
     await user.click(screen.getByRole("button", { name: "Aanpassen" }));
 
     // Assert
-    expect(onEditAction).toHaveBeenCalledWith(expenseTransaction);
+    expect(onEditAction).toHaveBeenCalledWith(categorizedExpenseTransaction);
+    expect(screen.getByText(groceriesCategory.name)).toBeTruthy();
   });
 
   test("bad flow: verwijderen vraagt eerst bevestiging en kan annuleren", async () => {
@@ -183,6 +245,7 @@ describe("TransactionList", () => {
     render(
       <TransactionList
         transactions={[expenseTransaction]}
+        categories={[]}
         effectiveMonth="2026-06"
         formatDate={() => "03 jun 2026"}
         formatCurrency={(amount) => `EUR ${amount}`}
@@ -213,6 +276,7 @@ describe("TransactionList", () => {
     render(
       <TransactionList
         transactions={[expenseTransaction]}
+        categories={[]}
         effectiveMonth="2026-06"
         formatDate={() => "03 jun 2026"}
         formatCurrency={(amount) => `EUR ${amount}`}

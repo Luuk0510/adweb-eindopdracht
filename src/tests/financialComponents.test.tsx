@@ -143,7 +143,7 @@ describe("MonthlyBalanceChart", () => {
 });
 
 describe("CategoryExpenseBarChart", () => {
-  test("bad flow: toont lege staat zonder data", () => {
+  test("bad flow: toont lege staat zonder categorie-uitgaven", () => {
     // Arrange
     render(
       <CategoryExpenseBarChart
@@ -155,19 +155,24 @@ describe("CategoryExpenseBarChart", () => {
     // Act
 
     // Assert
+    expect(screen.getByText("Uitgaven per categorie")).toBeTruthy();
     expect(
       screen.getByText("De staafdiagram verschijnt zodra er uitgaven zijn."),
     ).toBeTruthy();
   });
 
-  test("happy flow: toont staafdiagram met data", () => {
+  test("happy flow: toont staafdiagram met categorie-uitgaven", () => {
     // Arrange
     render(
       <CategoryExpenseBarChart
         categoryExpenseData={[
           {
             categoryName: "Boodschappen",
-            amount: 250,
+            amount: 125,
+          },
+          {
+            categoryName: "Huur",
+            amount: 900,
           },
         ]}
         formatCurrency={(amount) => `EUR ${amount}`}
@@ -179,6 +184,7 @@ describe("CategoryExpenseBarChart", () => {
     // Assert
     expect(screen.getByTestId("bar-chart")).toBeTruthy();
     expect(screen.getByText("Uitgaven")).toBeTruthy();
+    expect(screen.queryByText("De staafdiagram verschijnt zodra er uitgaven zijn.")).toBeNull();
   });
 });
 
