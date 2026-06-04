@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { User } from "firebase/auth";
 import { HouseholdBook } from "@/types/householdBook";
 import {
-  getParticipantHouseholdBooks,
   listenToActiveHouseholdBooks,
   listenToArchivedHouseholdBooks,
   listenToParticipantHouseholdBooks,
@@ -20,26 +19,6 @@ export function useHouseholdBooks(user: User | null) {
     if (!user) {
       return;
     }
-
-    let isMounted = true;
-
-    async function loadParticipantBooks() {
-      if (!user) {
-        return;
-      }
-
-      try {
-        const sharedBooks = await getParticipantHouseholdBooks(user.uid);
-
-        if (isMounted) {
-          setParticipantBooks(sharedBooks);
-        }
-      } catch (error) {
-        console.error("Gedeelde huishoudboekjes laden is niet gelukt.", error);
-      }
-    }
-
-    void loadParticipantBooks();
 
     const unsubscribeActiveBooks = listenToActiveHouseholdBooks(
       user.uid,
@@ -64,7 +43,6 @@ export function useHouseholdBooks(user: User | null) {
     );
 
     return () => {
-      isMounted = false;
       unsubscribeActiveBooks();
       unsubscribeArchivedBooks();
       unsubscribeParticipantBooks();
