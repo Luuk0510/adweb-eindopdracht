@@ -175,7 +175,6 @@ export function listenToActiveHouseholdBooks(
     },
     (error) => {
       handleSnapshotError(error);
-      callback([]);
     },
   );
 }
@@ -187,7 +186,6 @@ export function listenToParticipantHouseholdBooks(
   const householdBooksQuery = query(
     householdBooksCollection,
     where("participantIds", "array-contains", userId),
-    where("isArchived", "==", false),
   );
 
   return onSnapshot(
@@ -197,6 +195,7 @@ export function listenToParticipantHouseholdBooks(
         .map((document: QueryDocumentSnapshot<DocumentData>) =>
           mapHouseholdBook(document.id, document.data()),
         )
+        .filter((book) => !book.isArchived)
         .sort((firstBook, secondBook) => {
           return secondBook.createdAt.getTime() - firstBook.createdAt.getTime();
         });
@@ -205,7 +204,6 @@ export function listenToParticipantHouseholdBooks(
     },
     (error) => {
       handleSnapshotError(error);
-      callback([]);
     },
   );
 }
@@ -235,7 +233,6 @@ export function listenToArchivedHouseholdBooks(
     },
     (error) => {
       handleSnapshotError(error);
-      callback([]);
     },
   );
 }
