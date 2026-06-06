@@ -4,12 +4,12 @@ import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 import { useFinancialData } from "@/hooks/useFinancialData";
 import { useTransactionForm } from "@/hooks/useTransactionForm";
 
-import { CategoryExpenseBarChart } from "@/components/household-books/CategoryExpenseBarChart";
-import { CategoryDropZone } from "@/components/household-books/CategoryDropZone";
-import { FinancialSummaryCards } from "@/components/household-books/FinancialSummaryCards";
-import { MonthlyBalanceChart } from "@/components/household-books/MonthlyBalanceChart";
-import { TransactionForm } from "@/components/household-books/TransactionForm";
-import { TransactionList } from "@/components/household-books/TransactionList";
+import { CategoryExpenseBarChart } from "@/components/household-books/detail/CategoryExpenseBarChart";
+import { CategoryDropZone } from "@/components/household-books/detail/CategoryDropZone";
+import { FinancialSummaryCards } from "@/components/household-books/detail/FinancialSummaryCards";
+import { MonthlyBalanceChart } from "@/components/household-books/detail/MonthlyBalanceChart";
+import { TransactionForm } from "@/components/household-books/detail/TransactionForm";
+import { TransactionList } from "@/components/household-books/detail/TransactionList";
 import { SecondaryLink } from "@/components/ui/SecondaryButton";
 
 import {

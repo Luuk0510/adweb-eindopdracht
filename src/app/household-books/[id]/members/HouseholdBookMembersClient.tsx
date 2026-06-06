@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { SubmitEvent, useEffect, useState } from "react";
-import { HouseholdBookNotAvailable } from "@/components/household-books/HouseholdBookNotAvailable";
-import { HouseholdBookSkeleton } from "@/components/household-books/HouseholdBookSkeleton";
+import { HouseholdBookNotAvailable } from "@/components/household-books/feedback/HouseholdBookNotAvailable";
+import { HouseholdBookSkeleton } from "@/components/household-books/feedback/HouseholdBookSkeleton";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 import {

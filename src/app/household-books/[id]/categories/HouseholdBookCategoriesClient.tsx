@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { SubmitEvent, useEffect, useMemo, useState } from "react";
-import { CategoryForm } from "@/components/household-books/CategoryForm";
-import { CategoryList } from "@/components/household-books/CategoryList";
-import { HouseholdBookSkeleton } from "@/components/household-books/HouseholdBookSkeleton";
+import { CategoryForm } from "@/components/household-books/categories/CategoryForm";
+import { CategoryList } from "@/components/household-books/categories/CategoryList";
+import { HouseholdBookSkeleton } from "@/components/household-books/feedback/HouseholdBookSkeleton";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 import {
   createCategory,

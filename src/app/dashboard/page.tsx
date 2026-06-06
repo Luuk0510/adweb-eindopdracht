@@ -4,9 +4,9 @@ import { SubmitEvent, useState } from "react";
 import { logout } from "@/services/authService";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 import { useHouseholdBooks } from "@/hooks/useHouseholdBooks";
-import { ArchivedHouseholdBookList } from "@/components/household-books/ArchivedHouseholdBookList";
-import { HouseholdBookForm } from "@/components/household-books/HouseholdBookForm";
-import { HouseholdBookList } from "@/components/household-books/HouseholdBookList";
+import { ArchivedHouseholdBookList } from "@/components/household-books/dashboard/ArchivedHouseholdBookList";
+import { HouseholdBookForm } from "@/components/household-books/dashboard/HouseholdBookForm";
+import { HouseholdBookList } from "@/components/household-books/dashboard/HouseholdBookList";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import {
   archiveHouseholdBook,

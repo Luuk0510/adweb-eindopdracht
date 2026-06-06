@@ -1,13 +1,13 @@
 import { jest, test, expect, describe } from "@jest/globals";
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { ArchivedHouseholdBookList } from "@/components/household-books/ArchivedHouseholdBookList";
-import { CategoryExpenseBarChart } from "@/components/household-books/CategoryExpenseBarChart";
-import { FinancialHeader } from "../components/household-books/FinancialHeader";
-import { FinancialSummaryCards } from "@/components/household-books/FinancialSummaryCards";
-import { HouseholdBookNotAvailable } from "@/components/household-books/HouseholdBookNotAvailable";
-import { HouseholdBookSkeleton } from "@/components/household-books/HouseholdBookSkeleton";
-import { MonthlyBalanceChart } from "@/components/household-books/MonthlyBalanceChart";
+import { ArchivedHouseholdBookList } from "@/components/household-books/dashboard/ArchivedHouseholdBookList";
+import { CategoryExpenseBarChart } from "@/components/household-books/detail/CategoryExpenseBarChart";
+import { FinancialHeader } from "@/components/household-books/detail/FinancialHeader";
+import { FinancialSummaryCards } from "@/components/household-books/detail/FinancialSummaryCards";
+import { HouseholdBookNotAvailable } from "@/components/household-books/feedback/HouseholdBookNotAvailable";
+import { HouseholdBookSkeleton } from "@/components/household-books/feedback/HouseholdBookSkeleton";
+import { MonthlyBalanceChart } from "@/components/household-books/detail/MonthlyBalanceChart";
 import { HouseholdBook } from "@/types/householdBook";
 
 const archivedBook: HouseholdBook = {

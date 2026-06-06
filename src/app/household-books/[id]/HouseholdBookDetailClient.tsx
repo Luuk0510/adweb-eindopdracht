@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { HouseholdBookSkeleton } from "@/components/household-books/HouseholdBookSkeleton";
-import { FinancialOverview } from "@/components/household-books/FinancialOverview";
+import { HouseholdBookSkeleton } from "@/components/household-books/feedback/HouseholdBookSkeleton";
+import { FinancialOverview } from "@/components/household-books/detail/FinancialOverview";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 import {
   getCachedHouseholdBook,
