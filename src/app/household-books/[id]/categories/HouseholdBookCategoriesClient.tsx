@@ -5,7 +5,7 @@ import { SubmitEvent, useEffect, useMemo, useState } from "react";
 import { CategoryForm } from "@/components/household-books/categories/CategoryForm";
 import { CategoryList } from "@/components/household-books/categories/CategoryList";
 import { HouseholdBookSkeleton } from "@/components/household-books/feedback/HouseholdBookSkeleton";
-import { useAuthRedirect } from "@/hooks/useAuthRedirect";
+import { useHouseholdBookPage } from "@/hooks/useHouseholdBookPage";
 import {
   createCategory,
   deleteCategory,
@@ -13,15 +13,10 @@ import {
   updateCategory,
 } from "@/services/categoryService";
 import {
-  getCachedHouseholdBook,
-  getHouseholdBookById,
-} from "@/services/householdBookService";
-import {
   getCachedTransactions,
   getTransactionsByHouseholdBookId,
 } from "@/services/transactionService";
 import { Category } from "@/types/category";
-import { HouseholdBook } from "@/types/householdBook";
 import { Transaction } from "@/types/transaction";
 import { getCategoryOverviews } from "@/utils/categoryCalculations";
 
@@ -32,15 +27,13 @@ type HouseholdBookCategoriesClientProps = {
 export function HouseholdBookCategoriesClient({
   bookId,
 }: HouseholdBookCategoriesClientProps) {
-  const { user, isCheckingAuth } = useAuthRedirect();
-  const [book, setBook] = useState<HouseholdBook | null>(
-    getCachedHouseholdBook(bookId),
-  );
+  const { user, book, isCheckingAuth, isLoadingBook } =
+    useHouseholdBookPage(bookId);
   const [categories, setCategories] = useState<Category[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>(
     getCachedTransactions(bookId) ?? [],
   );
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingData, setIsLoadingData] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [formMessage, setFormMessage] = useState("");
   const [categoryName, setCategoryName] = useState("");
@@ -50,36 +43,46 @@ export function HouseholdBookCategoriesClient({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
+    let isMounted = true;
+
     async function loadData() {
       if (!user) {
         return;
       }
 
-      setIsLoading(true);
+      setIsLoadingData(true);
       setErrorMessage("");
 
       try {
-        const [foundBook, foundCategories, foundTransactions] = await Promise.all([
-          getHouseholdBookById(bookId, user.uid),
+        const [foundCategories, foundTransactions] = await Promise.all([
           getCategoriesByHouseholdBookId(bookId, user.uid),
           getTransactionsByHouseholdBookId(bookId, user.uid),
         ]);
 
-        setBook(foundBook);
-        setCategories(foundCategories);
-        setTransactions(foundTransactions);
+        if (isMounted) {
+          setCategories(foundCategories);
+          setTransactions(foundTransactions);
+        }
       } catch (error) {
-        if (error instanceof Error) {
-          setErrorMessage(error.message);
-        } else {
-          setErrorMessage("Er is iets misgegaan bij het laden van categorieen.");
+        if (isMounted) {
+          if (error instanceof Error) {
+            setErrorMessage(error.message);
+          } else {
+            setErrorMessage("Er is iets misgegaan bij het laden van categorieen.");
+          }
         }
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoadingData(false);
+        }
       }
     }
 
     void loadData();
+
+    return () => {
+      isMounted = false;
+    };
   }, [bookId, user]);
 
   const categoryOverviews = useMemo(() => {
@@ -189,7 +192,7 @@ export function HouseholdBookCategoriesClient({
     }
   }
 
-  if (isCheckingAuth || isLoading) {
+  if (isCheckingAuth || isLoadingBook || isLoadingData) {
     return <HouseholdBookSkeleton />;
   }
 
