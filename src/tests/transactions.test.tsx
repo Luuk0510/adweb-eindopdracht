@@ -66,7 +66,7 @@ describe("TransactionForm", () => {
     const onTypeChange = jest.fn();
     const onCategoryChange = jest.fn();
     const onDateChange = jest.fn();
-    const onSubmitAction = jest.fn((event: React.FormEvent<HTMLFormElement>) =>
+    const onSubmitAction = jest.fn((event: React.SubmitEvent<HTMLFormElement>) =>
       event.preventDefault(),
     );
 

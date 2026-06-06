@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useEffect, useState } from "react";
+import { SubmitEvent, useEffect, useState } from "react";
 import { HouseholdBookNotAvailable } from "@/components/household-books/HouseholdBookNotAvailable";
 import { HouseholdBookSkeleton } from "@/components/household-books/HouseholdBookSkeleton";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
@@ -44,7 +44,7 @@ export function HouseholdBookMembersClient({
     loadBook();
   }, [bookId, user]);
 
-  async function handleAddParticipant(event: FormEvent<HTMLFormElement>) {
+  async function handleAddParticipant(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage("");
 
