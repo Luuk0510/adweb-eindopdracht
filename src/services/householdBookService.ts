@@ -1,12 +1,10 @@
 import {
   addDoc,
   collection,
-  deleteDoc,
   doc,
   DocumentData,
   FirestoreError,
   getDoc,
-  getDocs,
   onSnapshot,
   QueryDocumentSnapshot,
   QuerySnapshot,
@@ -16,20 +14,11 @@ import {
   where,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { Category } from "@/types/category";
+import { getFriendlyFirestoreErrorMessage } from "@/services/firestoreHelpers";
 import { HouseholdBook } from "@/types/householdBook";
-import { Transaction } from "@/types/transaction";
 
 const householdBooksCollection = collection(db, "householdBooks");
-const transactionsCollection = collection(db, "transactions");
-const categoriesCollection = collection(db, "categories");
 const householdBookCache = new Map<string, HouseholdBook>();
-const transactionsCache = new Map<string, Transaction[]>();
-const categoriesCache = new Map<string, Category[]>();
-
-function clearCategoriesCache(bookId: string) {
-  categoriesCache.delete(bookId);
-}
 
 function cacheHouseholdBook(book: HouseholdBook) {
   householdBookCache.set(book.id, book);
@@ -39,47 +28,12 @@ export function getCachedHouseholdBook(bookId: string) {
   return householdBookCache.get(bookId) ?? null;
 }
 
-export function getCachedTransactions(bookId: string) {
-  return transactionsCache.get(bookId) ?? null;
-}
-
-function clearTransactionsCache(bookId: string) {
-  transactionsCache.delete(bookId);
-}
-
 function handleSnapshotError(error: FirestoreError) {
   if (error.code === "permission-denied") {
     return;
   }
 
   console.error(error.message);
-}
-
-function isPermissionDeniedError(error: unknown) {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "code" in error &&
-    (error as { code?: string }).code === "permission-denied"
-  );
-}
-
-function getFriendlyFirestoreErrorMessage(error: unknown) {
-  if (isPermissionDeniedError(error)) {
-    return "Je hebt hier geen toegang toe. Controleer je rechten of probeer het later opnieuw.";
-  }
-
-  return null;
-}
-
-function rethrowFriendlyFirestoreError(error: unknown): never {
-  const friendlyMessage = getFriendlyFirestoreErrorMessage(error);
-
-  if (friendlyMessage) {
-    throw new Error(friendlyMessage);
-  }
-
-  throw error;
 }
 
 function mapHouseholdBook(
@@ -95,58 +49,6 @@ function mapHouseholdBook(
     isArchived: data.isArchived ?? false,
     createdAt: data.createdAt?.toDate?.() ?? new Date(),
     updatedAt: data.updatedAt?.toDate?.() ?? new Date(),
-  };
-}
-
-function toDate(value: unknown): Date {
-  if (value instanceof Date) {
-    return value;
-  }
-
-  if (
-    typeof value === "object" &&
-    value !== null &&
-    "toDate" in value &&
-    typeof value.toDate === "function"
-  ) {
-    return value.toDate();
-  }
-
-  if (typeof value === "string" || typeof value === "number") {
-    const parsedDate = new Date(value);
-
-    if (!Number.isNaN(parsedDate.getTime())) {
-      return parsedDate;
-    }
-  }
-
-  return new Date();
-}
-
-function mapTransaction(documentId: string, data: DocumentData): Transaction {
-  return {
-    id: documentId,
-    bookId: data.bookId ?? "",
-    categoryId: data.categoryId ?? null,
-    type: data.type === "income" ? "income" : "expense",
-    title: data.title ?? data.description ?? "Onbekende transactie",
-    amount: typeof data.amount === "number" ? data.amount : 0,
-    date: toDate(data.date),
-    createdBy: data.createdBy ?? "",
-    createdAt: toDate(data.createdAt),
-    updatedAt: toDate(data.updatedAt),
-  };
-}
-
-function mapCategory(documentId: string, data: DocumentData): Category {
-  return {
-    id: documentId,
-    bookId: data.bookId ?? "",
-    name: data.name ?? "Onbekende categorie",
-    maxBudget: typeof data.maxBudget === "number" ? data.maxBudget : 0,
-    endDate: data.endDate ? toDate(data.endDate) : null,
-    createdAt: toDate(data.createdAt),
-    updatedAt: toDate(data.updatedAt),
   };
 }
 
@@ -257,19 +159,16 @@ export async function createHouseholdBook(
   });
 }
 
-export async function getHouseholdBookById(
-  bookId: string,
-  userId: string,
-) {
+export async function getHouseholdBookById(bookId: string, userId: string) {
   try {
     const cachedBook = householdBookCache.get(bookId);
 
     if (cachedBook) {
-      const isParticipant =
+      const canOpenBook =
         cachedBook.ownerId === userId ||
         cachedBook.participantIds.includes(userId);
 
-      if (isParticipant && !cachedBook.isArchived) {
+      if (canOpenBook && !cachedBook.isArchived) {
         return cachedBook;
       }
     }
@@ -282,7 +181,6 @@ export async function getHouseholdBookById(
     }
 
     const data = bookSnapshot.data();
-
     const participantIds = data.participantIds ?? [];
     const isParticipant = participantIds.includes(userId);
 
@@ -304,339 +202,6 @@ export async function getHouseholdBookById(
 
     throw error;
   }
-}
-
-export async function getTransactionsByHouseholdBookId(
-  bookId: string,
-  userId: string,
-): Promise<Transaction[]> {
-  try {
-    const cachedTransactions = transactionsCache.get(bookId);
-
-    if (cachedTransactions) {
-      return cachedTransactions;
-    }
-
-    const book = await getHouseholdBookById(bookId, userId);
-
-    if (!book) {
-      throw new Error("Huishoudboekje niet gevonden.");
-    }
-
-    const transactionsQuery = query(
-      transactionsCollection,
-      where("bookId", "==", bookId),
-    );
-
-    const snapshot = await getDocs(transactionsQuery);
-
-    const transactions = snapshot.docs
-      .map((transactionDocument: QueryDocumentSnapshot<DocumentData>) =>
-        mapTransaction(
-          transactionDocument.id,
-          transactionDocument.data(),
-        ),
-      )
-      .sort((firstTransaction, secondTransaction) => {
-        return (
-          secondTransaction.date.getTime() -
-          firstTransaction.date.getTime()
-        );
-      });
-
-    transactionsCache.set(bookId, transactions);
-
-    return transactions;
-  } catch (error) {
-    rethrowFriendlyFirestoreError(error);
-  }
-}
-
-export async function getCategoriesByHouseholdBookId(
-  bookId: string,
-  userId: string,
-): Promise<Category[]> {
-  try {
-    const cachedCategories = categoriesCache.get(bookId);
-
-    if (cachedCategories) {
-      return cachedCategories;
-    }
-
-    const book = await getHouseholdBookById(bookId, userId);
-
-    if (!book) {
-      throw new Error("Huishoudboekje niet gevonden.");
-    }
-
-    const categoriesQuery = query(
-      categoriesCollection,
-      where("bookId", "==", bookId),
-    );
-
-    const snapshot = await getDocs(categoriesQuery);
-
-    const categories = snapshot.docs
-      .map((categoryDocument: QueryDocumentSnapshot<DocumentData>) =>
-        mapCategory(categoryDocument.id, categoryDocument.data()),
-      )
-      .sort((firstCategory, secondCategory) => {
-        return firstCategory.name.localeCompare(secondCategory.name);
-      });
-
-    categoriesCache.set(bookId, categories);
-
-    return categories;
-  } catch (error) {
-    rethrowFriendlyFirestoreError(error);
-  }
-}
-
-type TransactionInput = {
-  title: string;
-  amount: number;
-  type: "expense" | "income";
-  date: Date;
-  categoryId: string | null;
-};
-
-function getTransactionTitle(title: string) {
-  return title.trim().slice(0, 50) || "Geen titel";
-}
-
-export async function createCategory(
-  bookId: string,
-  userId: string,
-  name: string,
-  maxBudget: number,
-  endDate: Date | null,
-) {
-  if (!name.trim()) {
-    throw new Error("Categorienaam is verplicht.");
-  }
-
-  if (!Number.isFinite(maxBudget)) {
-    throw new Error("Budget is verplicht.");
-  }
-
-  if (maxBudget < 0) {
-    throw new Error("Budget mag niet negatief zijn.");
-  }
-
-  const book = await getHouseholdBookById(bookId, userId);
-
-  if (!book) {
-    throw new Error("Huishoudboekje niet gevonden.");
-  }
-
-  if (book.ownerId !== userId) {
-    throw new Error("Alleen de eigenaar mag categorieën toevoegen.");
-  }
-
-  const categoryReference = await addDoc(categoriesCollection, {
-    bookId,
-    name: name.trim(),
-    maxBudget,
-    endDate,
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
-  });
-
-  clearCategoriesCache(bookId);
-
-  return categoryReference;
-}
-
-export async function createTransaction(
-  bookId: string,
-  userId: string,
-  transaction: TransactionInput,
-) {
-  const book = await getHouseholdBookById(bookId, userId);
-
-  if (!book) {
-    throw new Error("Huishoudboekje niet gevonden.");
-  }
-
-  if (book.ownerId !== userId) {
-    throw new Error("Alleen de eigenaar mag transacties toevoegen.");
-  }
-
-  if (transaction.amount <= 0) {
-    throw new Error("Kosten zijn verplicht.");
-  }
-
-  const newTransaction = await addDoc(transactionsCollection, {
-    bookId,
-    categoryId: transaction.categoryId,
-    type: transaction.type,
-    title: getTransactionTitle(transaction.title),
-    amount: transaction.amount,
-    date: transaction.date,
-    createdBy: userId,
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
-  });
-
-  clearTransactionsCache(bookId);
-
-  return newTransaction;
-}
-
-export async function updateCategory(
-  categoryId: string,
-  bookId: string,
-  userId: string,
-  name: string,
-  maxBudget: number,
-  endDate: Date | null,
-) {
-  if (!name.trim()) {
-    throw new Error("Categorienaam is verplicht.");
-  }
-
-  if (!Number.isFinite(maxBudget)) {
-    throw new Error("Budget is verplicht.");
-  }
-
-  if (maxBudget < 0) {
-    throw new Error("Budget mag niet negatief zijn.");
-  }
-
-  const book = await getHouseholdBookById(bookId, userId);
-
-  if (!book) {
-    throw new Error("Huishoudboekje niet gevonden.");
-  }
-
-  if (book.ownerId !== userId) {
-    throw new Error("Alleen de eigenaar mag categorieën aanpassen.");
-  }
-
-  const categoryReference = doc(db, "categories", categoryId);
-  const categorySnapshot = await getDoc(categoryReference);
-
-  if (!categorySnapshot.exists()) {
-    throw new Error("Categorie bestaat niet.");
-  }
-
-  if ((categorySnapshot.data().bookId ?? "") !== bookId) {
-    throw new Error("Categorie hoort niet bij dit huishoudboekje.");
-  }
-
-  await updateDoc(categoryReference, {
-    name: name.trim(),
-    maxBudget,
-    endDate,
-    updatedAt: serverTimestamp(),
-  });
-
-  clearCategoriesCache(bookId);
-}
-
-export async function updateTransaction(
-  transactionId: string,
-  bookId: string,
-  userId: string,
-  transaction: TransactionInput,
-) {
-  const book = await getHouseholdBookById(bookId, userId);
-
-  if (!book) {
-    throw new Error("Huishoudboekje niet gevonden.");
-  }
-
-  if (book.ownerId !== userId) {
-    throw new Error("Alleen de eigenaar mag transacties aanpassen.");
-  }
-
-  if (transaction.amount <= 0) {
-    throw new Error("Kosten zijn verplicht.");
-  }
-
-  const transactionReference = doc(db, "transactions", transactionId);
-  const transactionSnapshot = await getDoc(transactionReference);
-
-  if (!transactionSnapshot.exists()) {
-    throw new Error("Transactie bestaat niet.");
-  }
-
-  if (transactionSnapshot.data().bookId !== bookId) {
-    throw new Error("Deze transactie hoort niet bij dit huishoudboekje.");
-  }
-
-  await updateDoc(transactionReference, {
-    type: transaction.type,
-    title: getTransactionTitle(transaction.title),
-    amount: transaction.amount,
-    date: transaction.date,
-    categoryId: transaction.categoryId,
-    updatedAt: serverTimestamp(),
-  });
-
-  clearTransactionsCache(bookId);
-}
-
-export async function deleteCategory(
-  categoryId: string,
-  bookId: string,
-  userId: string,
-) {
-  const book = await getHouseholdBookById(bookId, userId);
-
-  if (!book) {
-    throw new Error("Huishoudboekje niet gevonden.");
-  }
-
-  if (book.ownerId !== userId) {
-    throw new Error("Alleen de eigenaar mag categorieën verwijderen.");
-  }
-
-  const categoryReference = doc(db, "categories", categoryId);
-  const categorySnapshot = await getDoc(categoryReference);
-
-  if (!categorySnapshot.exists()) {
-    throw new Error("Categorie bestaat niet.");
-  }
-
-  if ((categorySnapshot.data().bookId ?? "") !== bookId) {
-    throw new Error("Categorie hoort niet bij dit huishoudboekje.");
-  }
-
-  await deleteDoc(categoryReference);
-
-  clearCategoriesCache(bookId);
-}
-
-export async function deleteTransaction(
-  transactionId: string,
-  bookId: string,
-  userId: string,
-) {
-  const book = await getHouseholdBookById(bookId, userId);
-
-  if (!book) {
-    throw new Error("Huishoudboekje niet gevonden.");
-  }
-
-  if (book.ownerId !== userId) {
-    throw new Error("Alleen de eigenaar mag transacties verwijderen.");
-  }
-
-  const transactionReference = doc(db, "transactions", transactionId);
-  const transactionSnapshot = await getDoc(transactionReference);
-
-  if (!transactionSnapshot.exists()) {
-    throw new Error("Transactie bestaat niet.");
-  }
-
-  if (transactionSnapshot.data().bookId !== bookId) {
-    throw new Error("Deze transactie hoort niet bij dit huishoudboekje.");
-  }
-
-  await deleteDoc(transactionReference);
-
-  clearTransactionsCache(bookId);
 }
 
 export async function archiveHouseholdBook(bookId: string, userId: string) {

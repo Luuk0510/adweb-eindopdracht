@@ -2,11 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { User } from "firebase/auth";
+import { getCategoriesByHouseholdBookId } from "@/services/categoryService";
 import {
-  getCategoriesByHouseholdBookId,
   getCachedTransactions,
   getTransactionsByHouseholdBookId,
-} from "@/services/householdBookService";
+} from "@/services/transactionService";
 import { Category } from "@/types/category";
 import { Transaction } from "@/types/transaction";
 import {

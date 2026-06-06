@@ -6,7 +6,7 @@ import {
   createTransaction,
   deleteTransaction,
   updateTransaction,
-} from "@/services/householdBookService";
+} from "@/services/transactionService";
 import { Transaction } from "@/types/transaction";
 import {
   getDateFromInput,
