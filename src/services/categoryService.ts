@@ -17,7 +17,10 @@ import {
   rethrowFriendlyFirestoreError,
   toDate,
 } from "@/services/firestoreHelpers";
-import { getHouseholdBookById } from "@/services/householdBookService";
+import {
+  getHouseholdBookById,
+  getOwnedHouseholdBookById,
+} from "@/services/householdBookService";
 import { Category } from "@/types/category";
 
 const categoriesCollection = collection(db, "categories");
@@ -98,15 +101,11 @@ export async function createCategory(
     throw new Error("Budget mag niet negatief zijn.");
   }
 
-  const book = await getHouseholdBookById(bookId, userId);
-
-  if (!book) {
-    throw new Error("Huishoudboekje niet gevonden.");
-  }
-
-  if (book.ownerId !== userId) {
-    throw new Error("Alleen de eigenaar mag categorieën toevoegen.");
-  }
+  await getOwnedHouseholdBookById(
+    bookId,
+    userId,
+    "Alleen de eigenaar mag categorieën toevoegen.",
+  );
 
   const categoryReference = await addDoc(categoriesCollection, {
     bookId,
@@ -142,15 +141,11 @@ export async function updateCategory(
     throw new Error("Budget mag niet negatief zijn.");
   }
 
-  const book = await getHouseholdBookById(bookId, userId);
-
-  if (!book) {
-    throw new Error("Huishoudboekje niet gevonden.");
-  }
-
-  if (book.ownerId !== userId) {
-    throw new Error("Alleen de eigenaar mag categorieën aanpassen.");
-  }
+  await getOwnedHouseholdBookById(
+    bookId,
+    userId,
+    "Alleen de eigenaar mag categorieën aanpassen.",
+  );
 
   const categoryReference = doc(db, "categories", categoryId);
   const categorySnapshot = await getDoc(categoryReference);
@@ -178,15 +173,11 @@ export async function deleteCategory(
   bookId: string,
   userId: string,
 ) {
-  const book = await getHouseholdBookById(bookId, userId);
-
-  if (!book) {
-    throw new Error("Huishoudboekje niet gevonden.");
-  }
-
-  if (book.ownerId !== userId) {
-    throw new Error("Alleen de eigenaar mag categorieën verwijderen.");
-  }
+  await getOwnedHouseholdBookById(
+    bookId,
+    userId,
+    "Alleen de eigenaar mag categorieën verwijderen.",
+  );
 
   const categoryReference = doc(db, "categories", categoryId);
   const categorySnapshot = await getDoc(categoryReference);

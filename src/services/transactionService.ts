@@ -17,7 +17,10 @@ import {
   rethrowFriendlyFirestoreError,
   toDate,
 } from "@/services/firestoreHelpers";
-import { getHouseholdBookById } from "@/services/householdBookService";
+import {
+  getHouseholdBookById,
+  getOwnedHouseholdBookById,
+} from "@/services/householdBookService";
 import { Transaction } from "@/types/transaction";
 
 const transactionsCollection = collection(db, "transactions");
@@ -109,15 +112,11 @@ export async function createTransaction(
   userId: string,
   transaction: TransactionInput,
 ) {
-  const book = await getHouseholdBookById(bookId, userId);
-
-  if (!book) {
-    throw new Error("Huishoudboekje niet gevonden.");
-  }
-
-  if (book.ownerId !== userId) {
-    throw new Error("Alleen de eigenaar mag transacties toevoegen.");
-  }
+  await getOwnedHouseholdBookById(
+    bookId,
+    userId,
+    "Alleen de eigenaar mag transacties toevoegen.",
+  );
 
   if (transaction.amount <= 0) {
     throw new Error("Kosten zijn verplicht.");
@@ -146,15 +145,11 @@ export async function updateTransaction(
   userId: string,
   transaction: TransactionInput,
 ) {
-  const book = await getHouseholdBookById(bookId, userId);
-
-  if (!book) {
-    throw new Error("Huishoudboekje niet gevonden.");
-  }
-
-  if (book.ownerId !== userId) {
-    throw new Error("Alleen de eigenaar mag transacties aanpassen.");
-  }
+  await getOwnedHouseholdBookById(
+    bookId,
+    userId,
+    "Alleen de eigenaar mag transacties aanpassen.",
+  );
 
   if (transaction.amount <= 0) {
     throw new Error("Kosten zijn verplicht.");
@@ -188,15 +183,11 @@ export async function deleteTransaction(
   bookId: string,
   userId: string,
 ) {
-  const book = await getHouseholdBookById(bookId, userId);
-
-  if (!book) {
-    throw new Error("Huishoudboekje niet gevonden.");
-  }
-
-  if (book.ownerId !== userId) {
-    throw new Error("Alleen de eigenaar mag transacties verwijderen.");
-  }
+  await getOwnedHouseholdBookById(
+    bookId,
+    userId,
+    "Alleen de eigenaar mag transacties verwijderen.",
+  );
 
   const transactionReference = doc(db, "transactions", transactionId);
   const transactionSnapshot = await getDoc(transactionReference);

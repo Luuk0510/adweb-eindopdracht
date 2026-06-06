@@ -204,7 +204,29 @@ export async function getHouseholdBookById(bookId: string, userId: string) {
   }
 }
 
-export async function archiveHouseholdBook(bookId: string, userId: string) {
+export async function getOwnedHouseholdBookById(
+  bookId: string,
+  userId: string,
+  errorMessage: string,
+) {
+  const book = await getHouseholdBookById(bookId, userId);
+
+  if (!book) {
+    throw new Error("Huishoudboekje niet gevonden.");
+  }
+
+  if (book.ownerId !== userId) {
+    throw new Error(errorMessage);
+  }
+
+  return book;
+}
+
+async function getOwnedBookDocument(
+  bookId: string,
+  userId: string,
+  notOwnerMessage: string,
+) {
   const bookReference = doc(db, "householdBooks", bookId);
   const bookSnapshot = await getDoc(bookReference);
 
@@ -215,8 +237,18 @@ export async function archiveHouseholdBook(bookId: string, userId: string) {
   const bookData = bookSnapshot.data();
 
   if (bookData.ownerId !== userId) {
-    throw new Error("Je mag alleen je eigen huishoudboekjes archiveren.");
+    throw new Error(notOwnerMessage);
   }
+
+  return { bookReference, bookData };
+}
+
+export async function archiveHouseholdBook(bookId: string, userId: string) {
+  const { bookReference, bookData } = await getOwnedBookDocument(
+    bookId,
+    userId,
+    "Je mag alleen je eigen huishoudboekjes archiveren.",
+  );
 
   return updateDoc(bookReference, {
     participantIds: bookData.participantIds ?? [],
@@ -226,18 +258,11 @@ export async function archiveHouseholdBook(bookId: string, userId: string) {
 }
 
 export async function restoreHouseholdBook(bookId: string, userId: string) {
-  const bookReference = doc(db, "householdBooks", bookId);
-  const bookSnapshot = await getDoc(bookReference);
-
-  if (!bookSnapshot.exists()) {
-    throw new Error("Huishoudboekje bestaat niet.");
-  }
-
-  const bookData = bookSnapshot.data();
-
-  if (bookData.ownerId !== userId) {
-    throw new Error("Je mag alleen je eigen huishoudboekjes herstellen.");
-  }
+  const { bookReference, bookData } = await getOwnedBookDocument(
+    bookId,
+    userId,
+    "Je mag alleen je eigen huishoudboekjes herstellen.",
+  );
 
   return updateDoc(bookReference, {
     participantIds: bookData.participantIds ?? [],
@@ -256,18 +281,11 @@ export async function updateHouseholdBook(
     throw new Error("Naam is verplicht.");
   }
 
-  const bookReference = doc(db, "householdBooks", bookId);
-  const bookSnapshot = await getDoc(bookReference);
-
-  if (!bookSnapshot.exists()) {
-    throw new Error("Huishoudboekje bestaat niet.");
-  }
-
-  const bookData = bookSnapshot.data();
-
-  if (bookData.ownerId !== userId) {
-    throw new Error("Je mag alleen je eigen huishoudboekjes aanpassen.");
-  }
+  const { bookReference, bookData } = await getOwnedBookDocument(
+    bookId,
+    userId,
+    "Je mag alleen je eigen huishoudboekjes aanpassen.",
+  );
 
   return updateDoc(bookReference, {
     name: name.trim(),
@@ -286,18 +304,11 @@ export async function addHouseholdBookParticipant(
     throw new Error("Gebruiker id is verplicht.");
   }
 
-  const bookReference = doc(db, "householdBooks", bookId);
-  const bookSnapshot = await getDoc(bookReference);
-
-  if (!bookSnapshot.exists()) {
-    throw new Error("Huishoudboekje bestaat niet.");
-  }
-
-  const bookData = bookSnapshot.data();
-
-  if (bookData.ownerId !== ownerId) {
-    throw new Error("Alleen de eigenaar mag deelnemers toevoegen.");
-  }
+  const { bookReference, bookData } = await getOwnedBookDocument(
+    bookId,
+    ownerId,
+    "Alleen de eigenaar mag deelnemers toevoegen.",
+  );
 
   const participantIds = bookData.participantIds ?? [];
   const newParticipantId = participantId.trim();
