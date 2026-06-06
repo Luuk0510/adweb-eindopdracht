@@ -1,16 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
-import {
-  createTransaction,
-  deleteTransaction,
-  getCategoriesByHouseholdBookId,
-  getCachedTransactions,
-  getTransactionsByHouseholdBookId,
-  updateTransaction,
-} from "@/services/householdBookService";
+import { useFinancialData } from "@/hooks/useFinancialData";
+import { useTransactionForm } from "@/hooks/useTransactionForm";
 
 import { CategoryExpenseBarChart } from "@/components/household-books/CategoryExpenseBarChart";
 import { CategoryDropZone } from "@/components/household-books/CategoryDropZone";
@@ -20,20 +12,10 @@ import { TransactionForm } from "@/components/household-books/TransactionForm";
 import { TransactionList } from "@/components/household-books/TransactionList";
 import { SecondaryLink } from "@/components/ui/SecondaryButton";
 
-import { Category } from "@/types/category";
-import { Transaction } from "@/types/transaction";
 import {
   formatCurrency,
   formatDate,
-  getAvailableMonths,
-  getCategoryExpenseData,
-  getDateFromInput,
-  getDateInputValue,
-  getFinancialSummaryCards,
-  getMonthKey,
   getMonthLabel,
-  getMonthlyChartData,
-  getMonthlyTransactions,
 } from "@/utils/financialCalculations";
 
 type FinancialOverviewProps = {
@@ -53,265 +35,48 @@ export function FinancialOverview({
 }: FinancialOverviewProps) {
   const { user, isCheckingAuth } = useAuthRedirect();
 
-  const cachedTransactions = getCachedTransactions(bookId);
+  const {
+    transactions,
+    setTransactions,
+    categories,
+    setSelectedMonth,
+    isLoading,
+    errorMessage,
+    availableMonths,
+    monthlyChartData,
+    effectiveMonth,
+    monthlyTransactions,
+    categoryExpenseData,
+    summaryCards,
+    refreshTransactions,
+  } = useFinancialData(bookId, user);
 
-  const [transactions, setTransactions] = useState<Transaction[]>(
-    cachedTransactions ?? [],
-  );
-  const [categories, setCategories] = useState<Category[]>([]);
-
-  const [selectedMonth, setSelectedMonth] = useState<string>(
-    cachedTransactions?.[0]
-      ? getMonthKey(cachedTransactions[0].date)
-      : "",
-  );
-
-  const [isLoading, setIsLoading] = useState(!cachedTransactions);
-  const [errorMessage, setErrorMessage] = useState("");
-  const [transactionTitle, setTransactionTitle] = useState("");
-  const [transactionAmount, setTransactionAmount] = useState("");
-  const [transactionType, setTransactionType] = useState<"expense" | "income">(
-    "expense",
-  );
-  const [transactionCategoryId, setTransactionCategoryId] = useState("");
-  const [transactionDate, setTransactionDate] = useState(
-    getDateInputValue(new Date()),
-  );
-  const [editingTransactionId, setEditingTransactionId] = useState<
-    string | null
-  >(null);
-  const [transactionErrorMessage, setTransactionErrorMessage] = useState("");
-
-  useEffect(() => {
-    if (!user) {
-      return;
-    }
-
-    const userId = user.uid;
-    let isMounted = true;
-
-    async function loadTransactions() {
-      try {
-        const [fetchedTransactions, fetchedCategories] = await Promise.all([
-          getTransactionsByHouseholdBookId(bookId, userId),
-          getCategoriesByHouseholdBookId(bookId, userId),
-        ]);
-
-        if (!isMounted) {
-          return;
-        }
-
-        setErrorMessage("");
-        setTransactions(fetchedTransactions ?? []);
-        setCategories(fetchedCategories ?? []);
-
-        setSelectedMonth((currentMonth) => {
-          if (currentMonth) {
-            return currentMonth;
-          }
-
-          return fetchedTransactions[0]
-            ? getMonthKey(fetchedTransactions[0].date)
-            : getMonthKey(new Date());
-        });
-      } catch (error) {
-        if (!isMounted) {
-          return;
-        }
-
-        if (
-          error instanceof Error &&
-          error.message === "Huishoudboekje niet gevonden."
-        ) {
-          setErrorMessage(error.message);
-        } else {
-          setTransactions([]);
-          setSelectedMonth(getMonthKey(new Date()));
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
-    }
-
-    void loadTransactions();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [bookId, user]);
-
-  const availableMonths = useMemo(() => {
-    return getAvailableMonths(transactions);
-  }, [transactions]);
-
-  const monthlyChartData = useMemo(() => {
-    return getMonthlyChartData(transactions);
-  }, [transactions]);
-
-  const effectiveMonth =
-    selectedMonth ||
-    availableMonths[0] ||
-    getMonthKey(new Date());
-
-  const monthlyTransactions = useMemo(() => {
-    return getMonthlyTransactions(transactions, effectiveMonth);
-  }, [effectiveMonth, transactions]);
-
-  const categoryExpenseData = useMemo(() => {
-    return getCategoryExpenseData(monthlyTransactions, categories);
-  }, [categories, monthlyTransactions]);
-
-  const summaryCards = useMemo(() => {
-    return getFinancialSummaryCards(monthlyTransactions);
-  }, [monthlyTransactions]);
-
-  async function refreshTransactions() {
-    if (!user) {
-      return;
-    }
-
-    const fetchedTransactions =
-      (await getTransactionsByHouseholdBookId(bookId, user.uid)) ?? [];
-
-    setTransactions(fetchedTransactions);
-  }
-
-  function resetTransactionForm() {
-    setTransactionTitle("");
-    setTransactionAmount("");
-    setTransactionType("expense");
-    setTransactionCategoryId("");
-    setTransactionDate(getDateInputValue(new Date()));
-    setEditingTransactionId(null);
-    setTransactionErrorMessage("");
-  }
-
-  async function handleTransactionSubmit(
-    event: React.SubmitEvent<HTMLFormElement>,
-  ) {
-    event.preventDefault();
-
-    if (!user) {
-      return;
-    }
-
-    const amount = Number(transactionAmount);
-
-    if (!amount || amount <= 0) {
-      setTransactionErrorMessage("Vul minimaal de kosten in.");
-      return;
-    }
-
-    const transactionDateValue = getDateFromInput(transactionDate);
-
-    try {
-      if (editingTransactionId) {
-        await updateTransaction(editingTransactionId, bookId, user.uid, {
-          title: transactionTitle,
-          amount,
-          type: transactionType,
-          date: transactionDateValue,
-          categoryId: transactionCategoryId || null,
-        });
-      } else {
-        await createTransaction(bookId, user.uid, {
-          title: transactionTitle,
-          amount,
-          type: transactionType,
-          date: transactionDateValue,
-          categoryId: transactionCategoryId || null,
-        });
-      }
-
-      await refreshTransactions();
-      setSelectedMonth(getMonthKey(transactionDateValue));
-      resetTransactionForm();
-    } catch (error) {
-      setTransactionErrorMessage(
-        error instanceof Error
-          ? error.message
-          : "Transactie opslaan is niet gelukt.",
-      );
-    }
-  }
-
-  function startEditingTransaction(transaction: Transaction) {
-    setEditingTransactionId(transaction.id);
-    setTransactionTitle(transaction.title);
-    setTransactionAmount(String(transaction.amount));
-    setTransactionType(transaction.type);
-    setTransactionCategoryId(transaction.categoryId ?? "");
-    setTransactionDate(getDateInputValue(transaction.date));
-    setTransactionErrorMessage("");
-  }
-
-  async function handleDeleteTransaction(transactionId: string) {
-    if (!user) {
-      return;
-    }
-
-    try {
-      await deleteTransaction(transactionId, bookId, user.uid);
-      await refreshTransactions();
-
-      if (editingTransactionId === transactionId) {
-        resetTransactionForm();
-      }
-    } catch (error) {
-      setTransactionErrorMessage(
-        error instanceof Error
-          ? error.message
-          : "Transactie verwijderen is niet gelukt.",
-      );
-    }
-  }
-
-  async function handleDropTransactionOnCategory(
-    transactionId: string,
-    categoryId: string | null,
-  ) {
-    if (!user) {
-      return;
-    }
-
-    const transaction = transactions.find(
-      (currentTransaction) => currentTransaction.id === transactionId,
-    );
-
-    if (!transaction) {
-      return;
-    }
-
-    const previousTransactions = transactions;
-
-    setTransactions((currentTransactions) =>
-      currentTransactions.map((currentTransaction) =>
-        currentTransaction.id === transactionId
-          ? { ...currentTransaction, categoryId }
-          : currentTransaction,
-      ),
-    );
-
-    try {
-      await updateTransaction(transactionId, bookId, user.uid, {
-        title: transaction.title,
-        amount: transaction.amount,
-        type: transaction.type,
-        date: transaction.date,
-        categoryId,
-      });
-      setTransactionErrorMessage("");
-    } catch (error) {
-      setTransactions(previousTransactions);
-      setTransactionErrorMessage(
-        error instanceof Error
-          ? error.message
-          : "Categorie koppelen is niet gelukt.",
-      );
-    }
-  }
+  const {
+    transactionTitle,
+    transactionAmount,
+    transactionType,
+    transactionCategoryId,
+    transactionDate,
+    editingTransactionId,
+    transactionErrorMessage,
+    setTransactionTitle,
+    setTransactionAmount,
+    setTransactionType,
+    setTransactionCategoryId,
+    setTransactionDate,
+    resetTransactionForm,
+    handleTransactionSubmit,
+    startEditingTransaction,
+    handleDeleteTransaction,
+    handleDropTransactionOnCategory,
+  } = useTransactionForm({
+    bookId,
+    user,
+    transactions,
+    setTransactions,
+    refreshTransactions,
+    setSelectedMonth,
+  });
 
   if (isCheckingAuth || isLoading) {
     return (
