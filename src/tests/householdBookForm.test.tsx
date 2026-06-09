@@ -1,7 +1,7 @@
 import { jest, test, expect, describe } from "@jest/globals";
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { HouseholdBookForm } from "@/components/household-books/HouseholdBookForm";
+import { HouseholdBookForm } from "@/components/household-books/dashboard/HouseholdBookForm";
 
 function renderHouseholdBookForm(overrides = {}) {
   return render(
@@ -12,7 +12,7 @@ function renderHouseholdBookForm(overrides = {}) {
       errorMessage=""
       onNameChange={jest.fn()}
       onDescriptionChange={jest.fn()}
-      onSubmit={jest.fn((event: React.FormEvent<HTMLFormElement>) =>
+      onSubmit={jest.fn((event: React.SubmitEvent<HTMLFormElement>) =>
         event.preventDefault(),
       )}
       onCancel={jest.fn()}
@@ -26,7 +26,7 @@ describe("HouseholdBookForm", () => {
     // Arrange
     const onNameChange = jest.fn();
     const onDescriptionChange = jest.fn();
-    const onSubmit = jest.fn((event: React.FormEvent<HTMLFormElement>) =>
+    const onSubmit = jest.fn((event: React.SubmitEvent<HTMLFormElement>) =>
       event.preventDefault(),
     );
 

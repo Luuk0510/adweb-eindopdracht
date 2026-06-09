@@ -1,9 +1,9 @@
 import { jest, test, expect, describe } from "@jest/globals";
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { CategoryDropZone } from "@/components/household-books/CategoryDropZone";
-import { TransactionForm } from "@/components/household-books/TransactionForm";
-import { TransactionList } from "@/components/household-books/TransactionList";
+import { CategoryDropZone } from "@/components/household-books/detail/CategoryDropZone";
+import { TransactionForm } from "@/components/household-books/detail/TransactionForm";
+import { TransactionList } from "@/components/household-books/detail/TransactionList";
 import { Category } from "@/types/category";
 import { Transaction } from "@/types/transaction";
 
@@ -66,7 +66,7 @@ describe("TransactionForm", () => {
     const onTypeChange = jest.fn();
     const onCategoryChange = jest.fn();
     const onDateChange = jest.fn();
-    const onSubmitAction = jest.fn((event: React.FormEvent<HTMLFormElement>) =>
+    const onSubmitAction = jest.fn((event: React.SubmitEvent<HTMLFormElement>) =>
       event.preventDefault(),
     );
 
