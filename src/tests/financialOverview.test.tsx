@@ -134,12 +134,14 @@ function mockTransactionForm(overrides = {}) {
     setTransactionCategoryId: jest.fn(),
     setTransactionDate: jest.fn(),
     resetTransactionForm: jest.fn(),
-    handleTransactionSubmit: jest.fn((event: React.SubmitEvent<HTMLFormElement>) =>
-      event.preventDefault(),
+    handleTransactionSubmit: jest.fn(
+      async (event: React.SubmitEvent<HTMLFormElement>) => {
+        event.preventDefault();
+      },
     ),
     startEditingTransaction: jest.fn(),
-    handleDeleteTransaction: jest.fn(),
-    handleDropTransactionOnCategory: jest.fn(),
+    handleDeleteTransaction: jest.fn(async () => undefined),
+    handleDropTransactionOnCategory: jest.fn(async () => undefined),
     ...overrides,
   });
 }
@@ -197,8 +199,11 @@ describe("FinancialOverview", () => {
 
     // Assert
     expect(screen.getByText("Overzicht van Prive")).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Categorie overzicht" }))
-      .toHaveAttribute("href", "/household-books/book-1/categories");
+    expect(
+      screen
+        .getByRole("link", { name: "Categorie overzicht" })
+        .getAttribute("href"),
+    ).toBe("/household-books/book-1/categories");
     expect(setSelectedMonth).toHaveBeenCalledWith("2026-05");
     expect(screen.getByText("Nieuwe transactie")).toBeTruthy();
     expect(screen.getByText("Sleep naar categorie")).toBeTruthy();
