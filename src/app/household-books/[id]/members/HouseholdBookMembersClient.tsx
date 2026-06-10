@@ -65,8 +65,7 @@ export function HouseholdBookMembersClient({
       </Link>
 
       <section className="mt-6 rounded-xl border border-gray-200 bg-white p-6 text-gray-900 shadow-sm">
-        <h1 className="text-3xl font-bold">Deelnemers</h1>
-        <p className="mt-2 text-sm text-gray-600">{book.name}</p>
+        <h1 className="text-3xl font-bold">Deelnemers van {book.name}</h1>
 
         <div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
           <form onSubmit={handleAddParticipant} className="space-y-4">
