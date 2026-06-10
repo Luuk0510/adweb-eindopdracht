@@ -59,10 +59,33 @@ export function HouseholdBookList({
             {book.description || "Geen omschrijving ingevuld."}
           </p>
 
-          <div className="mt-4 flex flex-wrap gap-3">
+          <div className="mt-4 space-y-3">
+            <SecondaryLink className="w-28" href={`/household-books/${book.id}`}>
+              Bekijken
+            </SecondaryLink>
+
+            <div className="flex flex-wrap gap-3">
+              <SecondaryLink
+                className="w-28"
+                href={`/household-books/${book.id}/categories`}
+              >
+                Categorieen
+              </SecondaryLink>
+
+              {book.ownerId === currentUserId && (
+                <SecondaryLink
+                  className="w-28"
+                  href={`/household-books/${book.id}/members`}
+                >
+                  Deelnemers
+                </SecondaryLink>
+              )}
+            </div>
+
             {book.ownerId === currentUserId && (
-              <>
+              <div className="flex flex-wrap gap-3">
                 <SecondaryButton
+                  className="w-28"
                   onClick={() =>
                     onEditAction(book.id, book.name, book.description)
                   }
@@ -71,26 +94,13 @@ export function HouseholdBookList({
                 </SecondaryButton>
 
                 <SecondaryButton
+                  className="w-28"
                   variant="danger"
                   onClick={() => onArchiveAction(book.id)}
                 >
                   Archiveren
                 </SecondaryButton>
-              </>
-            )}
-
-            <SecondaryLink href={`/household-books/${book.id}`}>
-              Bekijken
-            </SecondaryLink>
-
-            <SecondaryLink href={`/household-books/${book.id}/categories`}>
-              Categorieen
-            </SecondaryLink>
-
-            {book.ownerId === currentUserId && (
-              <SecondaryLink href={`/household-books/${book.id}/members`}>
-                Deelnemers
-              </SecondaryLink>
+              </div>
             )}
           </div>
         </article>

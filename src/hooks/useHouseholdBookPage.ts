@@ -20,6 +20,7 @@ export function useHouseholdBookPage(bookId: string) {
     }
 
     const cachedBookForPage = getCachedHouseholdBook(bookId);
+    const userId = user.uid;
     let isMounted = true;
 
     setBook(cachedBookForPage);
@@ -27,7 +28,7 @@ export function useHouseholdBookPage(bookId: string) {
 
     async function loadBook() {
       try {
-        const foundBook = await getHouseholdBookById(bookId, user.uid);
+        const foundBook = await getHouseholdBookById(bookId, userId);
 
         if (isMounted) {
           setBook(foundBook);
