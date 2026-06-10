@@ -67,7 +67,7 @@ export function HouseholdBookList({
             <div className="flex flex-wrap gap-3">
               <SecondaryLink
                 className="w-28"
-                href={`/household-books/${book.id}/categories`}
+                href={`/household-books/${book.id}/categories?from=dashboard`}
               >
                 Categorieen
               </SecondaryLink>

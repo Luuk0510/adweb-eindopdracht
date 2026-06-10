@@ -22,10 +22,12 @@ import { getCategoryOverviews } from "@/utils/categoryCalculations";
 
 type HouseholdBookCategoriesClientProps = {
   bookId: string;
+  cameFromDashboard: boolean;
 };
 
 export function HouseholdBookCategoriesClient({
   bookId,
+  cameFromDashboard,
 }: HouseholdBookCategoriesClientProps) {
   const { user, book, isCheckingAuth, isLoadingBook } =
     useHouseholdBookPage(bookId);
@@ -41,6 +43,10 @@ export function HouseholdBookCategoriesClient({
   const [endDateInput, setEndDateInput] = useState("");
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const backHref = cameFromDashboard ? "/dashboard" : `/household-books/${bookId}`;
+  const backLabel = cameFromDashboard
+    ? "Terug naar dashboard"
+    : "Terug naar overzicht";
 
   useEffect(() => {
     let isMounted = true;
@@ -199,8 +205,8 @@ export function HouseholdBookCategoriesClient({
   if (errorMessage || !book) {
     return (
       <main className="mx-auto max-w-6xl p-8">
-        <Link className="text-sm underline" href="/dashboard">
-          Terug naar dashboard
+        <Link className="text-sm underline" href={backHref}>
+          {backLabel}
         </Link>
 
         <section className="mt-6 rounded-xl border border-rose-200 bg-rose-50 p-6 text-rose-900 shadow-sm">
@@ -218,8 +224,8 @@ export function HouseholdBookCategoriesClient({
   return (
     <main className="mx-auto max-w-6xl p-8">
       <div className="flex items-center justify-between gap-4">
-        <Link className="text-sm underline" href={`/household-books/${bookId}`}>
-          Terug naar overzicht
+        <Link className="text-sm underline" href={backHref}>
+          {backLabel}
         </Link>
 
       </div>
