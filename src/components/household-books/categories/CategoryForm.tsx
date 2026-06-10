@@ -42,6 +42,7 @@ export function CategoryForm({
             className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
             value={categoryName}
             onChange={(event) => onCategoryNameChange(event.target.value)}
+            maxLength={50}
             required
           />
         </label>
@@ -59,11 +60,11 @@ export function CategoryForm({
           />
         </label>
 
-        <label className="block text-sm text-gray-700 md:col-span-2">
+        <label className="block text-sm text-gray-700">
           Einddatum (optioneel)
           <input
             type="date"
-            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 md:max-w-xs"
+            className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2"
             value={endDateInput}
             onChange={(event) => onEndDateChange(event.target.value)}
           />

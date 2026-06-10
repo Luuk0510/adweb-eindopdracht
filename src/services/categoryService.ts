@@ -42,6 +42,10 @@ function mapCategory(documentId: string, data: DocumentData): Category {
   };
 }
 
+function getCategoryName(name: string) {
+  return name.trim().slice(0, 50);
+}
+
 export async function getCategoriesByHouseholdBookId(
   bookId: string,
   userId: string,
@@ -89,7 +93,9 @@ export async function createCategory(
   maxBudget: number,
   endDate: Date | null,
 ) {
-  if (!name.trim()) {
+  const categoryName = getCategoryName(name);
+
+  if (!categoryName) {
     throw new Error("Categorienaam is verplicht.");
   }
 
@@ -109,7 +115,7 @@ export async function createCategory(
 
   const categoryReference = await addDoc(categoriesCollection, {
     bookId,
-    name: name.trim(),
+    name: categoryName,
     maxBudget,
     endDate,
     createdAt: serverTimestamp(),
@@ -129,7 +135,9 @@ export async function updateCategory(
   maxBudget: number,
   endDate: Date | null,
 ) {
-  if (!name.trim()) {
+  const categoryName = getCategoryName(name);
+
+  if (!categoryName) {
     throw new Error("Categorienaam is verplicht.");
   }
 
@@ -159,7 +167,7 @@ export async function updateCategory(
   }
 
   await updateDoc(categoryReference, {
-    name: name.trim(),
+    name: categoryName,
     maxBudget,
     endDate,
     updatedAt: serverTimestamp(),

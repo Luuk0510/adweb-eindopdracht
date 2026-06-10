@@ -162,6 +162,7 @@ describe("CategoryForm", () => {
     expect(onMaxBudgetChange).toHaveBeenCalledWith("1000");
     expect(onEndDateChange).toHaveBeenCalledWith("2026-06-30");
     expect(onSubmitAction).toHaveBeenCalledTimes(1);
+    expect(screen.getByLabelText("Naam").getAttribute("maxlength")).toBe("50");
   });
 
   test("edit flow: toont melding en annuleren", async () => {

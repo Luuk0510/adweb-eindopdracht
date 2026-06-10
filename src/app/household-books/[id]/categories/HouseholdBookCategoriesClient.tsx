@@ -222,11 +222,10 @@ export function HouseholdBookCategoriesClient({
           Terug naar overzicht
         </Link>
 
-        <p className="text-sm text-gray-500">{book.name}</p>
       </div>
 
       <section className="mt-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h1 className="text-3xl font-bold text-gray-900">Categorie overzicht</h1>
+        <h1 className="text-3xl font-bold text-gray-900">Categorie overzicht van {book.name}</h1>
         <p className="mt-2 text-sm text-gray-600">
           Bekijk per categorie hoeveel budget nog beschikbaar is en waar je bijna of over je limiet zit.
         </p>
