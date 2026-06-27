@@ -1,7 +1,7 @@
 import { jest, test, expect, describe } from "@jest/globals";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { HouseholdBookList } from "@/components/household-books/HouseholdBookList";
+import { HouseholdBookList } from "@/components/household-books/dashboard/HouseholdBookList";
 import { HouseholdBook } from "@/types/householdBook";
 
 const baseBook: HouseholdBook = {

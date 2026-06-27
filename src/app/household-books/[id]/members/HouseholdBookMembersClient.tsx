@@ -1,16 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useEffect, useState } from "react";
-import { HouseholdBookNotAvailable } from "@/components/household-books/HouseholdBookNotAvailable";
-import { HouseholdBookSkeleton } from "@/components/household-books/HouseholdBookSkeleton";
+import { SubmitEvent, useState } from "react";
+import { HouseholdBookNotAvailable } from "@/components/household-books/feedback/HouseholdBookNotAvailable";
+import { HouseholdBookSkeleton } from "@/components/household-books/feedback/HouseholdBookSkeleton";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
-import { useAuthRedirect } from "@/hooks/useAuthRedirect";
-import {
-  addHouseholdBookParticipant,
-  getHouseholdBookById,
-} from "@/services/householdBookService";
-import { HouseholdBook } from "@/types/householdBook";
+import { useHouseholdBookPage } from "@/hooks/useHouseholdBookPage";
+import { addHouseholdBookParticipant } from "@/services/householdBookService";
 
 type HouseholdBookMembersClientProps = {
   bookId: string;
@@ -19,32 +15,12 @@ type HouseholdBookMembersClientProps = {
 export function HouseholdBookMembersClient({
   bookId,
 }: HouseholdBookMembersClientProps) {
-  const { user, isCheckingAuth } = useAuthRedirect();
-  const [book, setBook] = useState<HouseholdBook | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { user, book, setBook, isCheckingAuth, isLoadingBook } =
+    useHouseholdBookPage(bookId);
   const [participantId, setParticipantId] = useState("");
   const [message, setMessage] = useState("");
 
-  useEffect(() => {
-    async function loadBook() {
-      if (!user) {
-        return;
-      }
-
-      try {
-        const foundBook = await getHouseholdBookById(bookId, user.uid);
-        setBook(foundBook);
-      } catch {
-        setBook(null);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    loadBook();
-  }, [bookId, user]);
-
-  async function handleAddParticipant(event: FormEvent<HTMLFormElement>) {
+  async function handleAddParticipant(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage("");
 
@@ -69,7 +45,7 @@ export function HouseholdBookMembersClient({
     }
   }
 
-  if (isCheckingAuth || isLoading) {
+  if (isCheckingAuth || isLoadingBook) {
     return <HouseholdBookSkeleton />;
   }
 
@@ -89,8 +65,7 @@ export function HouseholdBookMembersClient({
       </Link>
 
       <section className="mt-6 rounded-xl border border-gray-200 bg-white p-6 text-gray-900 shadow-sm">
-        <h1 className="text-3xl font-bold">Deelnemers</h1>
-        <p className="mt-2 text-sm text-gray-600">{book.name}</p>
+        <h1 className="text-3xl font-bold">Deelnemers van {book.name}</h1>
 
         <div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
           <form onSubmit={handleAddParticipant} className="space-y-4">

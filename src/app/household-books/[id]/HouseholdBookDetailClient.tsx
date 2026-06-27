@@ -1,15 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { HouseholdBookSkeleton } from "@/components/household-books/HouseholdBookSkeleton";
-import { FinancialOverview } from "@/components/household-books/FinancialOverview";
-import { useAuthRedirect } from "@/hooks/useAuthRedirect";
-import {
-  getCachedHouseholdBook,
-  getHouseholdBookById,
-} from "@/services/householdBookService";
-import { HouseholdBook } from "@/types/householdBook";
+import { HouseholdBookSkeleton } from "@/components/household-books/feedback/HouseholdBookSkeleton";
+import { FinancialOverview } from "@/components/household-books/detail/FinancialOverview";
+import { useHouseholdBookPage } from "@/hooks/useHouseholdBookPage";
 
 type HouseholdBookDetailClientProps = {
   bookId: string;
@@ -18,31 +12,10 @@ type HouseholdBookDetailClientProps = {
 export function HouseholdBookDetailClient({
   bookId,
 }: HouseholdBookDetailClientProps) {
-  const { user, isCheckingAuth } = useAuthRedirect();
-  const cachedBook = getCachedHouseholdBook(bookId);
-  const [book, setBook] = useState<HouseholdBook | null>(cachedBook);
-  const [isLoading, setIsLoading] = useState(!cachedBook);
+  const { user, book, isCheckingAuth, isLoadingBook } =
+    useHouseholdBookPage(bookId);
 
-  useEffect(() => {
-    async function loadBook() {
-      if (!user) {
-        return;
-      }
-
-      try {
-        const foundBook = await getHouseholdBookById(bookId, user.uid);
-        setBook(foundBook);
-      } catch {
-        setBook(null);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    loadBook();
-  }, [bookId, user]);
-
-  if (isCheckingAuth || isLoading) {
+  if (isCheckingAuth || isLoadingBook) {
     return <HouseholdBookSkeleton />;
   }
 

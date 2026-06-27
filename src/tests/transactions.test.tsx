@@ -1,9 +1,9 @@
 import { jest, test, expect, describe } from "@jest/globals";
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { CategoryDropZone } from "@/components/household-books/CategoryDropZone";
-import { TransactionForm } from "@/components/household-books/TransactionForm";
-import { TransactionList } from "@/components/household-books/TransactionList";
+import { CategoryDropZone } from "@/components/household-books/detail/CategoryDropZone";
+import { TransactionForm } from "@/components/household-books/detail/TransactionForm";
+import { TransactionList } from "@/components/household-books/detail/TransactionList";
 import { Category } from "@/types/category";
 import { Transaction } from "@/types/transaction";
 
@@ -66,7 +66,7 @@ describe("TransactionForm", () => {
     const onTypeChange = jest.fn();
     const onCategoryChange = jest.fn();
     const onDateChange = jest.fn();
-    const onSubmitAction = jest.fn((event: React.FormEvent<HTMLFormElement>) =>
+    const onSubmitAction = jest.fn((event: React.SubmitEvent<HTMLFormElement>) =>
       event.preventDefault(),
     );
 
@@ -151,31 +151,20 @@ describe("TransactionForm", () => {
 });
 
 describe("CategoryDropZone", () => {
-  test("happy flow: transactie naar categorie slepen", () => {
+  test("happy flow: toont categorie als drop zone", () => {
     // Arrange
-    const onDropAction = jest.fn();
-
-    render(
-      <CategoryDropZone
-        categories={[groceriesCategory]}
-        onDropAction={onDropAction}
-      />,
-    );
+    render(<CategoryDropZone categories={[groceriesCategory]} />);
 
     // Act
-    fireEvent.drop(screen.getByText("Dagelijkse boodschappen"), {
-      dataTransfer: {
-        getData: () => "transaction-1",
-      },
-    });
 
     // Assert
-    expect(onDropAction).toHaveBeenCalledWith("transaction-1", "category-1");
+    expect(screen.getByText("Geen categorie")).toBeTruthy();
+    expect(screen.getByText("Dagelijkse boodschappen")).toBeTruthy();
   });
 
   test("bad flow: toont melding zonder categorieën", () => {
     // Arrange
-    render(<CategoryDropZone categories={[]} onDropAction={jest.fn()} />);
+    render(<CategoryDropZone categories={[]} />);
 
     // Act
 

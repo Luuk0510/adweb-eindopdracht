@@ -49,10 +49,7 @@ export function HouseholdBookForm({
         </div>
 
         <div>
-          <label
-            className="block text-sm font-medium"
-            htmlFor={descriptionId}
-          >
+          <label className="block text-sm font-medium" htmlFor={descriptionId}>
             Omschrijving
           </label>
           <textarea
@@ -70,20 +67,14 @@ export function HouseholdBookForm({
           </p>
         )}
 
-        <div className="flex gap-3">
+        <div className="flex flex-wrap justify-center gap-3">
           <PrimaryButton type="submit">
             {editingBookId ? "Wijzigingen opslaan" : "Toevoegen"}
           </PrimaryButton>
 
-          {editingBookId && (
-            <SecondaryButton
-              className="px-4"
-              type="button"
-              onClick={onCancel}
-            >
-              Annuleren
-            </SecondaryButton>
-          )}
+          <SecondaryButton className="px-4" type="button" onClick={onCancel}>
+            Annuleren
+          </SecondaryButton>
         </div>
       </form>
     </section>

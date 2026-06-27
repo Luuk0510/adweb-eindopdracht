@@ -1,8 +1,7 @@
-export type SummaryCardData = {
+type SummaryCardData = {
   label: string;
   value: string;
   accentClassName: string;
-  helper: string;
 };
 
 type FinancialSummaryCardsProps = {
@@ -19,7 +18,6 @@ export function FinancialSummaryCards({ cards }: FinancialSummaryCardsProps) {
         >
           <p className="text-sm font-medium">{card.label}</p>
           <p className="mt-2 text-2xl font-semibold">{card.value}</p>
-          <p className="mt-2 text-sm opacity-80">{card.helper}</p>
         </article>
       ))}
     </div>

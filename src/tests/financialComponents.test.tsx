@@ -1,13 +1,12 @@
 import { jest, test, expect, describe } from "@jest/globals";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { ArchivedHouseholdBookList } from "@/components/household-books/ArchivedHouseholdBookList";
-import { CategoryExpenseBarChart } from "@/components/household-books/CategoryExpenseBarChart";
-import { FinancialHeader } from "../components/household-books/FinancialHeader";
-import { FinancialSummaryCards } from "@/components/household-books/FinancialSummaryCards";
-import { HouseholdBookNotAvailable } from "@/components/household-books/HouseholdBookNotAvailable";
-import { HouseholdBookSkeleton } from "@/components/household-books/HouseholdBookSkeleton";
-import { MonthlyBalanceChart } from "@/components/household-books/MonthlyBalanceChart";
+import { ArchivedHouseholdBookList } from "@/components/household-books/dashboard/ArchivedHouseholdBookList";
+import { CategoryExpenseBarChart } from "@/components/household-books/detail/CategoryExpenseBarChart";
+import { FinancialSummaryCards } from "@/components/household-books/detail/FinancialSummaryCards";
+import { HouseholdBookNotAvailable } from "@/components/household-books/feedback/HouseholdBookNotAvailable";
+import { HouseholdBookSkeleton } from "@/components/household-books/feedback/HouseholdBookSkeleton";
+import { MonthlyBalanceChart } from "@/components/household-books/detail/MonthlyBalanceChart";
 import { HouseholdBook } from "@/types/householdBook";
 
 const archivedBook: HouseholdBook = {
@@ -21,52 +20,6 @@ const archivedBook: HouseholdBook = {
   updatedAt: new Date("2026-06-01"),
 };
 
-describe("FinancialHeader", () => {
-  test("happy flow: maand wijzigen", () => {
-    // Arrange
-    const onMonthChange = jest.fn();
-
-    render(
-      <FinancialHeader
-        title="Overzicht"
-        description="Bekijk je balans"
-        effectiveMonth="2026-06"
-        availableMonths={["2026-06", "2026-05"]}
-        getMonthLabel={(month: string) => month}
-        onMonthChange={onMonthChange}
-      />,
-    );
-
-    // Act
-    fireEvent.change(screen.getByLabelText("Bekijk per maand"), {
-      target: { value: "2026-05" },
-    });
-
-    // Assert
-    expect(screen.getByText("Overzicht")).toBeTruthy();
-    expect(onMonthChange).toHaveBeenCalledWith("2026-05");
-  });
-
-  test("bad flow: toont fallback maand als er geen maanden zijn", () => {
-    // Arrange
-    render(
-      <FinancialHeader
-        title="Overzicht"
-        description="Bekijk je balans"
-        effectiveMonth="2026-06"
-        availableMonths={[]}
-        getMonthLabel={(month: string) => `Maand ${month}`}
-        onMonthChange={jest.fn()}
-      />,
-    );
-
-    // Act
-
-    // Assert
-    expect(screen.getByText("Maand 2026-06")).toBeTruthy();
-  });
-});
-
 describe("FinancialSummaryCards", () => {
   test("toont alle statistiekkaarten", () => {
     // Arrange
@@ -76,13 +29,11 @@ describe("FinancialSummaryCards", () => {
           {
             label: "Inkomsten",
             value: "EUR 100",
-            helper: "50%",
             accentClassName: "test-class",
           },
           {
             label: "Uitgaven",
             value: "EUR 50",
-            helper: "25%",
             accentClassName: "test-class",
           },
         ]}
@@ -169,10 +120,12 @@ describe("CategoryExpenseBarChart", () => {
           {
             categoryName: "Boodschappen",
             amount: 125,
+            budget: 200,
           },
           {
             categoryName: "Huur",
             amount: 900,
+            budget: 800,
           },
         ]}
         formatCurrency={(amount) => `EUR ${amount}`}
@@ -184,7 +137,9 @@ describe("CategoryExpenseBarChart", () => {
     // Assert
     expect(screen.getByTestId("bar-chart")).toBeTruthy();
     expect(screen.getByText("Uitgaven")).toBeTruthy();
-    expect(screen.queryByText("De staafdiagram verschijnt zodra er uitgaven zijn.")).toBeNull();
+    expect(
+      screen.queryByText("De staafdiagram verschijnt zodra er uitgaven zijn."),
+    ).toBeNull();
   });
 });
 

@@ -4,10 +4,11 @@ import { SubmitEvent, useState } from "react";
 import { logout } from "@/services/authService";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 import { useHouseholdBooks } from "@/hooks/useHouseholdBooks";
-import { ArchivedHouseholdBookList } from "@/components/household-books/ArchivedHouseholdBookList";
-import { HouseholdBookForm } from "@/components/household-books/HouseholdBookForm";
-import { HouseholdBookList } from "@/components/household-books/HouseholdBookList";
+import { ArchivedHouseholdBookList } from "@/components/household-books/dashboard/ArchivedHouseholdBookList";
+import { HouseholdBookForm } from "@/components/household-books/dashboard/HouseholdBookForm";
+import { HouseholdBookList } from "@/components/household-books/dashboard/HouseholdBookList";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
+import { SecondaryButton } from "@/components/ui/SecondaryButton";
 import {
   archiveHouseholdBook,
   createHouseholdBook,
@@ -22,6 +23,7 @@ export default function DashboardPage() {
   const [description, setDescription] = useState("");
   const [editingBookId, setEditingBookId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
+  const [isFormOpen, setIsFormOpen] = useState(false);
 
   const { ownerBooks, participantBooks, archivedBooks, isLoading } =
     useHouseholdBooks(user);
@@ -42,6 +44,7 @@ export default function DashboardPage() {
       }
 
       resetForm();
+      setIsFormOpen(false);
     } catch (error) {
       if (error instanceof Error) {
         setErrorMessage(error.message);
@@ -96,6 +99,7 @@ export default function DashboardPage() {
     setName(bookName);
     setDescription(bookDescription);
     setErrorMessage("");
+    setIsFormOpen(true);
   }
 
   function resetForm() {
@@ -103,6 +107,15 @@ export default function DashboardPage() {
     setDescription("");
     setEditingBookId(null);
     setErrorMessage("");
+    setIsFormOpen(false);
+  }
+
+  function startCreatingBook() {
+    setName("");
+    setDescription("");
+    setEditingBookId(null);
+    setErrorMessage("");
+    setIsFormOpen(true);
   }
 
   async function handleLogout() {
@@ -127,21 +140,37 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        <PrimaryButton onClick={handleLogout}>
-          Uitloggen
-        </PrimaryButton>
+        <SecondaryButton onClick={handleLogout}>Uitloggen</SecondaryButton>
       </section>
 
-      <HouseholdBookForm
-        name={name}
-        description={description}
-        editingBookId={editingBookId}
-        errorMessage={errorMessage}
-        onNameChange={setName}
-        onDescriptionChange={setDescription}
-        onSubmit={handleSubmit}
-        onCancel={resetForm}
-      />
+      <div className="mb-8">
+        <PrimaryButton onClick={startCreatingBook}>
+          Nieuw huishoudboekje
+        </PrimaryButton>
+      </div>
+
+      {isFormOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4"
+          onClick={resetForm}
+        >
+          <div
+            className="w-full max-w-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <HouseholdBookForm
+              name={name}
+              description={description}
+              editingBookId={editingBookId}
+              errorMessage={errorMessage}
+              onNameChange={setName}
+              onDescriptionChange={setDescription}
+              onSubmit={handleSubmit}
+              onCancel={resetForm}
+            />
+          </div>
+        </div>
+      )}
 
       <section className="mt-8">
         <h2 className="mb-4 text-2xl font-bold">Mijn eigen huishoudboekjes</h2>

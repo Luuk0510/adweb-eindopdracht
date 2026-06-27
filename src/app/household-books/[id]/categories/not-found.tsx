@@ -3,8 +3,8 @@ import { HouseholdBookNotAvailable } from "@/components/household-books/feedback
 export default function NotFoundPage() {
   return (
     <HouseholdBookNotAvailable
-      title="Huishoudboekje niet gevonden"
-      message="Dit huishoudboekje bestaat niet of is niet beschikbaar."
+      title="Categorieen niet beschikbaar"
+      message="Dit categorie overzicht bestaat niet of is niet beschikbaar."
     />
   );
 }
