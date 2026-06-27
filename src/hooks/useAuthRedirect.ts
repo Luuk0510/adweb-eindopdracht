@@ -14,6 +14,8 @@ export function useAuthRedirect() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (!currentUser) {
+        setUser(null);
+        setIsCheckingAuth(false);
         router.push("/login");
         return;
       }

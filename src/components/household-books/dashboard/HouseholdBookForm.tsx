@@ -37,7 +37,7 @@ export function HouseholdBookForm({
       <form onSubmit={onSubmit} className="mt-4 space-y-4">
         <div>
           <label className="block text-sm font-medium" htmlFor={nameId}>
-            Naam
+            Naam *
           </label>
           <input
             id={nameId}
