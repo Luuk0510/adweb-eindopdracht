@@ -1,17 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { SubmitEvent, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CategoryForm } from "@/components/household-books/categories/CategoryForm";
 import { CategoryList } from "@/components/household-books/categories/CategoryList";
 import { HouseholdBookSkeleton } from "@/components/household-books/feedback/HouseholdBookSkeleton";
+import { PrimaryButton } from "@/components/ui/PrimaryButton";
+import { useCategoryForm } from "@/hooks/useCategoryForm";
 import { useHouseholdBookPage } from "@/hooks/useHouseholdBookPage";
-import {
-  createCategory,
-  deleteCategory,
-  getCategoriesByHouseholdBookId,
-  updateCategory,
-} from "@/services/categoryService";
+import { getCategoriesByHouseholdBookId } from "@/services/categoryService";
 import {
   getCachedTransactions,
   getTransactionsByHouseholdBookId,
@@ -22,10 +19,12 @@ import { getCategoryOverviews } from "@/utils/categoryCalculations";
 
 type HouseholdBookCategoriesClientProps = {
   bookId: string;
+  cameFromDashboard: boolean;
 };
 
 export function HouseholdBookCategoriesClient({
   bookId,
+  cameFromDashboard,
 }: HouseholdBookCategoriesClientProps) {
   const { user, book, isCheckingAuth, isLoadingBook } =
     useHouseholdBookPage(bookId);
@@ -35,12 +34,46 @@ export function HouseholdBookCategoriesClient({
   );
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
-  const [formMessage, setFormMessage] = useState("");
-  const [categoryName, setCategoryName] = useState("");
-  const [maxBudgetInput, setMaxBudgetInput] = useState("");
-  const [endDateInput, setEndDateInput] = useState("");
-  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const backHref = cameFromDashboard
+    ? "/dashboard"
+    : `/household-books/${bookId}`;
+  const backLabel = cameFromDashboard
+    ? "Terug naar dashboard"
+    : "Terug naar overzicht";
+
+  async function refreshCategories() {
+    if (!user) {
+      return;
+    }
+
+    const refreshedCategories = await getCategoriesByHouseholdBookId(
+      bookId,
+      user.uid,
+    );
+    setCategories(refreshedCategories);
+  }
+
+  const {
+    categoryName,
+    maxBudgetInput,
+    endDateInput,
+    editingCategoryId,
+    formMessage,
+    isSubmitting,
+    setCategoryName,
+    setMaxBudgetInput,
+    setEndDateInput,
+    resetCategoryForm,
+    startEditingCategory,
+    handleCategorySubmit,
+    handleDeleteCategory,
+  } = useCategoryForm({
+    bookId,
+    user,
+    refreshCategories,
+    onSaved: () => setIsFormOpen(false),
+  });
 
   useEffect(() => {
     let isMounted = true;
@@ -68,7 +101,9 @@ export function HouseholdBookCategoriesClient({
           if (error instanceof Error) {
             setErrorMessage(error.message);
           } else {
-            setErrorMessage("Er is iets misgegaan bij het laden van categorieen.");
+            setErrorMessage(
+              "Er is iets misgegaan bij het laden van categorieen.",
+            );
           }
         }
       } finally {
@@ -89,109 +124,6 @@ export function HouseholdBookCategoriesClient({
     return getCategoryOverviews(categories, transactions);
   }, [categories, transactions]);
 
-  function resetForm() {
-    setCategoryName("");
-    setMaxBudgetInput("");
-    setEndDateInput("");
-    setEditingCategoryId(null);
-    setFormMessage("");
-  }
-
-  async function refreshCategories(userId: string) {
-    const refreshedCategories = await getCategoriesByHouseholdBookId(bookId, userId);
-    setCategories(refreshedCategories);
-  }
-
-  function startEditingCategory(category: Category) {
-    setEditingCategoryId(category.id);
-    setCategoryName(category.name);
-    setMaxBudgetInput(String(category.maxBudget));
-    setEndDateInput(
-      category.endDate ? category.endDate.toISOString().split("T")[0] : "",
-    );
-    setFormMessage("");
-  }
-
-  async function handleCategorySubmit(event: SubmitEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setFormMessage("");
-
-    if (!user) {
-      return;
-    }
-
-    const budgetNumber = Number(maxBudgetInput);
-    const parsedEndDate = endDateInput ? new Date(`${endDateInput}T00:00:00`) : null;
-
-    if (!Number.isFinite(budgetNumber)) {
-      setFormMessage("Vul een geldig budget in.");
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    try {
-      if (editingCategoryId) {
-        await updateCategory(
-          editingCategoryId,
-          bookId,
-          user.uid,
-          categoryName,
-          budgetNumber,
-          parsedEndDate,
-        );
-      } else {
-        await createCategory(
-          bookId,
-          user.uid,
-          categoryName,
-          budgetNumber,
-          parsedEndDate,
-        );
-      }
-
-      await refreshCategories(user.uid);
-      resetForm();
-      setFormMessage(
-        editingCategoryId ? "Categorie bijgewerkt." : "Categorie toegevoegd.",
-      );
-    } catch (error) {
-      if (error instanceof Error) {
-        setFormMessage(error.message);
-      } else {
-        setFormMessage("Er is iets misgegaan met het opslaan van de categorie.");
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
-
-  async function handleDeleteCategory(categoryId: string) {
-    if (!user) {
-      return;
-    }
-
-    setFormMessage("");
-    setIsSubmitting(true);
-
-    try {
-      await deleteCategory(categoryId, bookId, user.uid);
-      await refreshCategories(user.uid);
-      if (editingCategoryId === categoryId) {
-        resetForm();
-      }
-      setFormMessage("Categorie verwijderd.");
-    } catch (error) {
-      if (error instanceof Error) {
-        setFormMessage(error.message);
-      } else {
-        setFormMessage("Er is iets misgegaan met verwijderen.");
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
-
   if (isCheckingAuth || isLoadingBook || isLoadingData) {
     return <HouseholdBookSkeleton />;
   }
@@ -199,8 +131,8 @@ export function HouseholdBookCategoriesClient({
   if (errorMessage || !book) {
     return (
       <main className="mx-auto max-w-6xl p-8">
-        <Link className="text-sm underline" href="/dashboard">
-          Terug naar dashboard
+        <Link className="text-sm underline" href={backHref}>
+          {backLabel}
         </Link>
 
         <section className="mt-6 rounded-xl border border-rose-200 bg-rose-50 p-6 text-rose-900 shadow-sm">
@@ -215,37 +147,71 @@ export function HouseholdBookCategoriesClient({
 
   const canManageCategories = book.ownerId === user?.uid;
 
+  function startCreatingCategory() {
+    resetCategoryForm();
+    setIsFormOpen(true);
+  }
+
+  function handleEditCategory(category: Category) {
+    startEditingCategory(category);
+    setIsFormOpen(true);
+  }
+
+  function closeCategoryForm() {
+    resetCategoryForm();
+    setIsFormOpen(false);
+  }
+
   return (
     <main className="mx-auto max-w-6xl p-8">
       <div className="flex items-center justify-between gap-4">
-        <Link className="text-sm underline" href={`/household-books/${bookId}`}>
-          Terug naar overzicht
+        <Link className="text-sm underline" href={backHref}>
+          {backLabel}
         </Link>
-
-        <p className="text-sm text-gray-500">{book.name}</p>
       </div>
 
       <section className="mt-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h1 className="text-3xl font-bold text-gray-900">Categorie overzicht</h1>
+        <h1 className="text-3xl font-bold text-gray-900">
+          Categorie overzicht van {book.name}
+        </h1>
         <p className="mt-2 text-sm text-gray-600">
-          Bekijk per categorie hoeveel budget nog beschikbaar is en waar je bijna of over je limiet zit.
+          Bekijk per categorie hoeveel budget nog beschikbaar is en waar je
+          bijna of over je limiet zit.
         </p>
       </section>
 
       {canManageCategories && (
-        <CategoryForm
-          categoryName={categoryName}
-          maxBudgetInput={maxBudgetInput}
-          endDateInput={endDateInput}
-          editingCategoryId={editingCategoryId}
-          formMessage={formMessage}
-          isSubmitting={isSubmitting}
-          onCategoryNameChange={setCategoryName}
-          onMaxBudgetChange={setMaxBudgetInput}
-          onEndDateChange={setEndDateInput}
-          onSubmitAction={handleCategorySubmit}
-          onCancelAction={resetForm}
-        />
+        <div className="mt-6">
+          <PrimaryButton onClick={startCreatingCategory}>
+            Categorie toevoegen
+          </PrimaryButton>
+        </div>
+      )}
+
+      {canManageCategories && isFormOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4"
+          onClick={closeCategoryForm}
+        >
+          <div
+            className="w-full max-w-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <CategoryForm
+              categoryName={categoryName}
+              maxBudgetInput={maxBudgetInput}
+              endDateInput={endDateInput}
+              editingCategoryId={editingCategoryId}
+              formMessage={formMessage}
+              isSubmitting={isSubmitting}
+              onCategoryNameChange={setCategoryName}
+              onMaxBudgetChange={setMaxBudgetInput}
+              onEndDateChange={setEndDateInput}
+              onSubmitAction={handleCategorySubmit}
+              onCancelAction={closeCategoryForm}
+            />
+          </div>
+        </div>
       )}
 
       <CategoryList
@@ -253,7 +219,7 @@ export function HouseholdBookCategoriesClient({
         categories={categories}
         canManageCategories={canManageCategories}
         isSubmitting={isSubmitting}
-        onEditAction={startEditingCategory}
+        onEditAction={handleEditCategory}
         onDeleteAction={(categoryId) => void handleDeleteCategory(categoryId)}
       />
     </main>

@@ -29,13 +29,11 @@ describe("FinancialSummaryCards", () => {
           {
             label: "Inkomsten",
             value: "EUR 100",
-            helper: "50%",
             accentClassName: "test-class",
           },
           {
             label: "Uitgaven",
             value: "EUR 50",
-            helper: "25%",
             accentClassName: "test-class",
           },
         ]}
@@ -122,10 +120,12 @@ describe("CategoryExpenseBarChart", () => {
           {
             categoryName: "Boodschappen",
             amount: 125,
+            budget: 200,
           },
           {
             categoryName: "Huur",
             amount: 900,
+            budget: 800,
           },
         ]}
         formatCurrency={(amount) => `EUR ${amount}`}
@@ -137,7 +137,9 @@ describe("CategoryExpenseBarChart", () => {
     // Assert
     expect(screen.getByTestId("bar-chart")).toBeTruthy();
     expect(screen.getByText("Uitgaven")).toBeTruthy();
-    expect(screen.queryByText("De staafdiagram verschijnt zodra er uitgaven zijn.")).toBeNull();
+    expect(
+      screen.queryByText("De staafdiagram verschijnt zodra er uitgaven zijn."),
+    ).toBeNull();
   });
 });
 

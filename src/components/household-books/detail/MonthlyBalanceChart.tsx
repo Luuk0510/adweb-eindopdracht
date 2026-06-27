@@ -11,7 +11,7 @@ import {
   YAxis,
 } from "recharts";
 
-export type MonthlyChartPoint = {
+type MonthlyChartPoint = {
   monthKey: string;
   monthLabel: string;
   income: number;

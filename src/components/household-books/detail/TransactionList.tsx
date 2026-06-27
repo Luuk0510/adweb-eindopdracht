@@ -1,5 +1,7 @@
 "use client";
 
+import { useDraggable } from "@dnd-kit/core";
+import type { CSSProperties, ReactNode } from "react";
 import { useState } from "react";
 import { SecondaryButton } from "@/components/ui/SecondaryButton";
 import { Category } from "@/types/category";
@@ -60,26 +62,11 @@ export function TransactionList({
               );
 
               return (
-                <li
+                <DraggableTransactionItem
                   key={transaction.id}
-                  draggable={canManage && !isDeleting}
-                  className={`max-w-full rounded-xl border p-4 shadow-sm transition hover:border-slate-300 ${
-                    isDeleting
-                      ? "border-red-200 bg-red-50"
-                      : canManage
-                        ? "cursor-grab border-slate-200 bg-white active:cursor-grabbing"
-                        : "border-slate-200 bg-white"
-                  }`}
-                  onDragStart={(event) => {
-                    if (!canManage) {
-                      return;
-                    }
-
-                    event.dataTransfer.setData(
-                      "transactionId",
-                      transaction.id,
-                    );
-                  }}
+                  transactionId={transaction.id}
+                  canDrag={canManage && !isDeleting}
+                  isDeleting={isDeleting}
                 >
                   {isDeleting ? (
                     <div className="min-w-0 space-y-4">
@@ -114,72 +101,108 @@ export function TransactionList({
                       </div>
                     </div>
                   ) : (
-                  <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
-                    <div className="min-w-0">
-                      <p className="max-w-full break-words text-base font-semibold text-slate-950">
-                        {transaction.title}
-                      </p>
-                      <div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-500">
-                        <span className="rounded-full bg-slate-100 px-3 py-1">
-                          {formatDate(transaction.date)}
-                        </span>
-                        <span
-                          className={`rounded-full px-3 py-1 ${
-                            isIncome
-                              ? "bg-emerald-100 text-emerald-800"
-                              : "bg-rose-100 text-rose-800"
+                    <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
+                      <div className="min-w-0">
+                        <p className="max-w-full break-words text-base font-semibold text-slate-950">
+                          {transaction.title}
+                        </p>
+                        <div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-500">
+                          <span className="rounded-full bg-slate-100 px-3 py-1">
+                            {formatDate(transaction.date)}
+                          </span>
+                          {category && (
+                            <span className="rounded-full bg-sky-100 px-3 py-1 text-sky-800">
+                              {category.name}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex min-w-0 flex-col gap-3 sm:items-end">
+                        <p
+                          className={`text-lg font-semibold ${
+                            isIncome ? "text-emerald-700" : "text-rose-700"
                           }`}
                         >
-                          {isIncome ? "Inkomst" : "Uitgave"}
-                        </span>
-                        {category && (
-                          <span className="rounded-full bg-sky-100 px-3 py-1 text-sky-800">
-                            {category.name}
-                          </span>
+                          {isIncome ? "+" : "-"}
+                          {formatCurrency(transaction.amount)}
+                        </p>
+
+                        {canManage && (
+                          <div className="flex flex-wrap justify-end gap-2">
+                            <SecondaryButton
+                              className="py-1 text-xs"
+                              type="button"
+                              onClick={() => onEditAction(transaction)}
+                            >
+                              Aanpassen
+                            </SecondaryButton>
+                            <SecondaryButton
+                              className="py-1 text-xs"
+                              variant="danger"
+                              type="button"
+                              onClick={() =>
+                                setTransactionIdToDelete(transaction.id)
+                              }
+                            >
+                              Verwijderen
+                            </SecondaryButton>
+                          </div>
                         )}
                       </div>
                     </div>
-
-                    <div className="flex min-w-0 flex-col gap-3 sm:items-end">
-                      <p
-                        className={`text-lg font-semibold ${
-                          isIncome ? "text-emerald-700" : "text-rose-700"
-                        }`}
-                      >
-                        {isIncome ? "+" : "-"}
-                        {formatCurrency(transaction.amount)}
-                      </p>
-
-                      {canManage && (
-                        <div className="flex flex-wrap justify-end gap-2">
-                          <SecondaryButton
-                            className="py-1 text-xs"
-                            type="button"
-                            onClick={() => onEditAction(transaction)}
-                          >
-                            Aanpassen
-                          </SecondaryButton>
-                          <SecondaryButton
-                            className="py-1 text-xs"
-                            variant="danger"
-                            type="button"
-                            onClick={() =>
-                              setTransactionIdToDelete(transaction.id)
-                            }
-                          >
-                            Verwijderen
-                          </SecondaryButton>
-                        </div>
-                      )}
-                    </div>
-                  </div>
                   )}
-                </li>
+                </DraggableTransactionItem>
               );
             })}
           </ul>
         )}
       </article>
     </div>
+  );
+}
+
+type DraggableTransactionItemProps = {
+  transactionId: string;
+  canDrag: boolean;
+  isDeleting: boolean;
+  children: ReactNode;
+};
+
+function DraggableTransactionItem({
+  transactionId,
+  canDrag,
+  isDeleting,
+  children,
+}: DraggableTransactionItemProps) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } =
+    useDraggable({
+      id: transactionId,
+      disabled: !canDrag,
+    });
+
+  const style: CSSProperties | undefined = transform
+    ? {
+        transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+        zIndex: 50,
+      }
+    : undefined;
+
+  return (
+    <li
+      ref={setNodeRef}
+      style={style}
+      className={`relative max-w-full rounded-xl border p-4 shadow-sm transition hover:border-slate-300 ${
+        isDeleting
+          ? "border-red-200 bg-red-50"
+          : canDrag
+            ? "cursor-grab border-slate-200 bg-white active:cursor-grabbing"
+            : "border-slate-200 bg-white"
+      } ${isDragging ? "z-50 scale-[1.01] opacity-80 shadow-lg" : ""}`}
+      {...listeners}
+      {...attributes}
+    >
+      {children}
+    </li>
   );
 }
