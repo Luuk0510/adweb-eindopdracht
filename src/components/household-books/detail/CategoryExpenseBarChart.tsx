@@ -10,9 +10,10 @@ import {
   YAxis,
 } from "recharts";
 
-export type CategoryExpenseChartPoint = {
+type CategoryExpenseChartPoint = {
   categoryName: string;
   amount: number;
+  budget: number | null;
 };
 
 type CategoryExpenseBarChartProps = {
@@ -51,11 +52,7 @@ export function CategoryExpenseBarChart({
               margin={{ top: 8, right: 8, bottom: 8, left: 24 }}
             >
               <CartesianGrid strokeDasharray="4 4" stroke="#e2e8f0" />
-              <XAxis
-                dataKey="categoryName"
-                tickLine={false}
-                axisLine={false}
-              />
+              <XAxis dataKey="categoryName" tickLine={false} axisLine={false} />
               <YAxis
                 width={90}
                 tickLine={false}
@@ -63,10 +60,9 @@ export function CategoryExpenseBarChart({
                 tickFormatter={(value) => formatCurrency(Number(value))}
               />
               <Tooltip
-                formatter={(value) => [
-                  formatCurrency(Number(value ?? 0)),
-                  "Uitgaven",
-                ]}
+                content={
+                  <CategoryExpenseTooltip formatCurrency={formatCurrency} />
+                }
               />
               <Bar
                 dataKey="amount"
@@ -79,5 +75,42 @@ export function CategoryExpenseBarChart({
         </div>
       )}
     </article>
+  );
+}
+
+type CategoryExpenseTooltipProps = {
+  active?: boolean;
+  payload?: Array<{
+    payload: CategoryExpenseChartPoint;
+  }>;
+  formatCurrency: (amount: number) => string;
+};
+
+function CategoryExpenseTooltip({
+  active,
+  payload,
+  formatCurrency,
+}: CategoryExpenseTooltipProps) {
+  if (!active || !payload?.length) {
+    return null;
+  }
+
+  const category = payload[0].payload;
+  const isOverBudget =
+    category.budget !== null && category.amount > category.budget;
+
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white p-3 text-sm shadow-sm">
+      <p className="font-medium text-slate-950">{category.categoryName}</p>
+      <p className="mt-1 text-slate-700">
+        Uitgaven: {formatCurrency(category.amount)}
+      </p>
+      <p className={isOverBudget ? "text-rose-700" : "text-slate-700"}>
+        Budget:{" "}
+        {category.budget === null
+          ? "Geen budget"
+          : formatCurrency(category.budget)}
+      </p>
+    </div>
   );
 }

@@ -110,15 +110,6 @@ export function TransactionList({
                           <span className="rounded-full bg-slate-100 px-3 py-1">
                             {formatDate(transaction.date)}
                           </span>
-                          <span
-                            className={`rounded-full px-3 py-1 ${
-                              isIncome
-                                ? "bg-emerald-100 text-emerald-800"
-                                : "bg-rose-100 text-rose-800"
-                            }`}
-                          >
-                            {isIncome ? "Inkomst" : "Uitgave"}
-                          </span>
                           {category && (
                             <span className="rounded-full bg-sky-100 px-3 py-1 text-sky-800">
                               {category.name}

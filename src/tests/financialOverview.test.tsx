@@ -98,19 +98,18 @@ function mockFinancialData(overrides = {}) {
       {
         categoryName: "Boodschappen",
         amount: 25,
+        budget: 200,
       },
     ],
     summaryCards: [
       {
         label: "Inkomsten",
         value: "EUR 1000",
-        helper: "98% van alle bewegingen",
         accentClassName: "test-class",
       },
       {
         label: "Uitgaven",
         value: "EUR 25",
-        helper: "2% van alle bewegingen",
         accentClassName: "test-class",
       },
     ],
@@ -206,7 +205,6 @@ describe("FinancialOverview", () => {
     ).toBe("/household-books/book-1/categories");
     expect(setSelectedMonth).toHaveBeenCalledWith("2026-05");
     expect(screen.getByText("Nieuwe transactie")).toBeTruthy();
-    expect(screen.getByText("Sleep naar categorie")).toBeTruthy();
   });
 
   test("bad flow: deelnemer ziet geen beheerformulier", () => {

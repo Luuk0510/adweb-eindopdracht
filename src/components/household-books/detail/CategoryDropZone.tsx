@@ -2,6 +2,7 @@
 
 import { useDroppable } from "@dnd-kit/core";
 import { Category } from "@/types/category";
+import { formatCurrency } from "@/utils/financialCalculations";
 
 type CategoryDropZoneProps = {
   categories: Category[];
@@ -10,9 +11,7 @@ type CategoryDropZoneProps = {
 export function CategoryDropZone({ categories }: CategoryDropZoneProps) {
   return (
     <article className="mt-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-      <h2 className="text-lg font-semibold text-slate-950">
-        Categorieën
-      </h2>
+      <h2 className="text-lg font-semibold text-slate-950">Categorieën</h2>
       <p className="mt-1 text-sm text-slate-600">
         Sleep een transactie naar een categorie om deze te koppelen.
       </p>
@@ -30,6 +29,7 @@ export function CategoryDropZone({ categories }: CategoryDropZoneProps) {
               key={category.id}
               label={category.name}
               categoryId={category.id}
+              budget={category.maxBudget}
             />
           ))
         )}
@@ -41,11 +41,13 @@ export function CategoryDropZone({ categories }: CategoryDropZoneProps) {
 type CategoryDropZoneItemProps = {
   label: string;
   categoryId: string | null;
+  budget?: number;
 };
 
 function CategoryDropZoneItem({
   label,
   categoryId,
+  budget,
 }: CategoryDropZoneItemProps) {
   const { isOver, setNodeRef } = useDroppable({
     id: `category:${categoryId ?? ""}`,
@@ -58,7 +60,14 @@ function CategoryDropZoneItem({
         isOver ? "border-slate-500 bg-slate-50" : "border-slate-300 bg-white"
       }`}
     >
-      {label}
+      <div className="flex items-center justify-between gap-3">
+        <span>{label}</span>
+        {budget !== undefined && (
+          <span className="text-xs text-slate-500">
+            {formatCurrency(budget)}
+          </span>
+        )}
+      </div>
     </div>
   );
 }

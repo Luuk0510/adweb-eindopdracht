@@ -53,9 +53,7 @@ export function getDateFromInput(value: string) {
 export function getAvailableMonths(transactions: Transaction[]) {
   return Array.from(
     new Set(transactions.map((transaction) => getMonthKey(transaction.date))),
-  ).sort((firstMonth, secondMonth) =>
-    secondMonth.localeCompare(firstMonth),
-  );
+  ).sort((firstMonth, secondMonth) => secondMonth.localeCompare(firstMonth));
 }
 
 export function getMonthlyTransactions(
@@ -71,10 +69,7 @@ export function getMonthlyTransactions(
 }
 
 export function getMonthlyChartData(transactions: Transaction[]) {
-  const totalsByMonth = new Map<
-    string,
-    { income: number; expense: number }
-  >();
+  const totalsByMonth = new Map<string, { income: number; expense: number }>();
 
   transactions.forEach((transaction) => {
     const monthKey = getMonthKey(transaction.date);
@@ -113,31 +108,50 @@ export function getCategoryExpenseData(
   const categoryNames = new Map(
     categories.map((category) => [category.id, category.name]),
   );
-  const totalsByCategory = new Map<string, number>();
+  const categoryBudgets = new Map(
+    categories.map((category) => [category.id, category.maxBudget]),
+  );
+  const totalsByCategory = new Map<
+    string,
+    {
+      amount: number;
+      budget: number | null;
+    }
+  >();
 
   transactions
     .filter((transaction) => transaction.type === "expense")
     .forEach((transaction) => {
       const categoryName = transaction.categoryId
-        ? categoryNames.get(transaction.categoryId) ?? "Onbekende categorie"
+        ? (categoryNames.get(transaction.categoryId) ?? "Onbekende categorie")
         : "Geen categorie";
+      const budget = transaction.categoryId
+        ? (categoryBudgets.get(transaction.categoryId) ?? null)
+        : null;
 
-      const currentTotal = totalsByCategory.get(categoryName) ?? 0;
+      const currentTotal = totalsByCategory.get(categoryName) ?? {
+        amount: 0,
+        budget,
+      };
 
-      totalsByCategory.set(categoryName, currentTotal + transaction.amount);
+      totalsByCategory.set(categoryName, {
+        amount: currentTotal.amount + transaction.amount,
+        budget,
+      });
     });
 
   return Array.from(totalsByCategory.entries())
-    .map(([categoryName, amount]) => ({
+    .map(([categoryName, data]) => ({
       categoryName,
-      amount,
+      amount: data.amount,
+      budget: data.budget,
     }))
     .sort((firstCategory, secondCategory) => {
       return secondCategory.amount - firstCategory.amount;
     });
 }
 
-export function getTransactionTotals(transactions: Transaction[]) {
+function getTransactionTotals(transactions: Transaction[]) {
   const incomeTotal = transactions
     .filter((transaction) => transaction.type === "income")
     .reduce((total, transaction) => total + transaction.amount, 0);
@@ -150,20 +164,11 @@ export function getTransactionTotals(transactions: Transaction[]) {
     incomeTotal,
     expenseTotal,
     balance: incomeTotal - expenseTotal,
-    totalVolume: incomeTotal + expenseTotal,
   };
 }
 
-function getPercentage(value: number, total: number) {
-  if (total <= 0) {
-    return 0;
-  }
-
-  return Math.round((value / total) * 100);
-}
-
 export function getFinancialSummaryCards(transactions: Transaction[]) {
-  const { incomeTotal, expenseTotal, balance, totalVolume } =
+  const { incomeTotal, expenseTotal, balance } =
     getTransactionTotals(transactions);
 
   return [
@@ -171,13 +176,11 @@ export function getFinancialSummaryCards(transactions: Transaction[]) {
       label: "Inkomsten",
       value: formatCurrency(incomeTotal),
       accentClassName: "border-emerald-200 bg-emerald-50 text-emerald-900",
-      helper: `${getPercentage(incomeTotal, totalVolume)}% van alle bewegingen`,
     },
     {
       label: "Uitgaven",
       value: formatCurrency(expenseTotal),
       accentClassName: "border-rose-200 bg-rose-50 text-rose-900",
-      helper: `${getPercentage(expenseTotal, totalVolume)}% van alle bewegingen`,
     },
     {
       label: "Saldo",
@@ -186,10 +189,6 @@ export function getFinancialSummaryCards(transactions: Transaction[]) {
         balance >= 0
           ? "border-sky-200 bg-sky-50 text-sky-900"
           : "border-amber-200 bg-amber-50 text-amber-900",
-      helper:
-        balance >= 0
-          ? "Je houdt deze maand geld over"
-          : "Je geeft meer uit dan er binnenkomt",
     },
   ];
 }
