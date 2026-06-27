@@ -1,5 +1,6 @@
 "use client";
 
+import { SecondaryButton } from "@/components/ui/SecondaryButton";
 import {
   CategoryOverview,
   formatCategoryCurrency,
@@ -82,23 +83,24 @@ export function CategoryCard({
 
       {canManageCategories && (
         <div className="mt-5 flex gap-3">
-          <button
-            className="rounded-lg border border-gray-400 px-3 py-2 text-xs font-medium"
+          <SecondaryButton
+            className="py-1 text-xs"
             type="button"
             onClick={onEditAction}
             disabled={isSubmitting}
           >
             Aanpassen
-          </button>
+          </SecondaryButton>
 
-          <button
-            className="rounded-lg border border-rose-400 px-3 py-2 text-xs font-medium text-rose-700"
+          <SecondaryButton
+            className="py-1 text-xs"
+            variant="danger"
             type="button"
             onClick={onDeleteAction}
             disabled={isSubmitting}
           >
             Verwijderen
-          </button>
+          </SecondaryButton>
         </div>
       )}
     </article>

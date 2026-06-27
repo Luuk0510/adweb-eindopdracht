@@ -1,65 +1,24 @@
 "use client";
 
-import { DragEvent, useState } from "react";
+import { useDroppable } from "@dnd-kit/core";
 import { Category } from "@/types/category";
 
 type CategoryDropZoneProps = {
   categories: Category[];
-  onDropAction: (transactionId: string, categoryId: string | null) => void;
 };
 
-export function CategoryDropZone({
-  categories,
-  onDropAction,
-}: CategoryDropZoneProps) {
-  const [activeCategoryId, setActiveCategoryId] = useState<
-    string | null | undefined
-  >(undefined);
-
-  function handleDrop(
-    event: DragEvent<HTMLDivElement>,
-    categoryId: string | null,
-  ) {
-    event.preventDefault();
-    setActiveCategoryId(undefined);
-
-    const transactionId = event.dataTransfer.getData("transactionId");
-
-    if (transactionId) {
-      onDropAction(transactionId, categoryId);
-    }
-  }
-
-  function handleDragOver(
-    event: DragEvent<HTMLDivElement>,
-    categoryId: string | null,
-  ) {
-    event.preventDefault();
-    setActiveCategoryId(categoryId);
-  }
-
+export function CategoryDropZone({ categories }: CategoryDropZoneProps) {
   return (
     <article className="mt-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
       <h2 className="text-lg font-semibold text-slate-950">
-        Sleep naar categorie
+        Categorieën
       </h2>
       <p className="mt-1 text-sm text-slate-600">
         Sleep een transactie naar een categorie om deze te koppelen.
       </p>
 
       <div className="mt-4 space-y-3">
-        <div
-          className={`rounded-xl border border-dashed p-4 text-sm transition ${
-            activeCategoryId === null
-              ? "border-slate-500 bg-white"
-              : "border-slate-300 bg-white"
-          }`}
-          onDragLeave={() => setActiveCategoryId(undefined)}
-          onDragOver={(event) => handleDragOver(event, null)}
-          onDrop={(event) => handleDrop(event, null)}
-        >
-          Geen categorie
-        </div>
+        <CategoryDropZoneItem label="Geen categorie" categoryId={null} />
 
         {categories.length === 0 ? (
           <p className="rounded-xl border border-dashed border-slate-300 bg-white p-4 text-sm text-slate-600">
@@ -67,22 +26,39 @@ export function CategoryDropZone({
           </p>
         ) : (
           categories.map((category) => (
-            <div
+            <CategoryDropZoneItem
               key={category.id}
-              className={`rounded-xl border border-dashed p-4 text-sm transition ${
-                activeCategoryId === category.id
-                  ? "border-slate-500 bg-white"
-                  : "border-slate-300 bg-white"
-              }`}
-              onDragLeave={() => setActiveCategoryId(undefined)}
-              onDragOver={(event) => handleDragOver(event, category.id)}
-              onDrop={(event) => handleDrop(event, category.id)}
-            >
-              {category.name}
-            </div>
+              label={category.name}
+              categoryId={category.id}
+            />
           ))
         )}
       </div>
     </article>
+  );
+}
+
+type CategoryDropZoneItemProps = {
+  label: string;
+  categoryId: string | null;
+};
+
+function CategoryDropZoneItem({
+  label,
+  categoryId,
+}: CategoryDropZoneItemProps) {
+  const { isOver, setNodeRef } = useDroppable({
+    id: `category:${categoryId ?? ""}`,
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`rounded-xl border border-dashed p-4 text-sm transition ${
+        isOver ? "border-slate-500 bg-slate-50" : "border-slate-300 bg-white"
+      }`}
+    >
+      {label}
+    </div>
   );
 }

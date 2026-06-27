@@ -1,6 +1,8 @@
 "use client";
 
 import { SubmitEvent } from "react";
+import { PrimaryButton } from "@/components/ui/PrimaryButton";
+import { SecondaryButton } from "@/components/ui/SecondaryButton";
 
 type CategoryFormProps = {
   categoryName: string;
@@ -35,7 +37,10 @@ export function CategoryForm({
         {editingCategoryId ? "Categorie aanpassen" : "Categorie toevoegen"}
       </h2>
 
-      <form className="mt-4 grid gap-4 md:grid-cols-2" onSubmit={onSubmitAction}>
+      <form
+        className="mt-4 grid gap-4 md:grid-cols-2"
+        onSubmit={onSubmitAction}
+      >
         <label className="block text-sm text-gray-700">
           Naam
           <input
@@ -76,25 +81,18 @@ export function CategoryForm({
           </p>
         ) : null}
 
-        <div className="md:col-span-2 flex flex-wrap gap-3">
-          <button
-            className="rounded-lg bg-black px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-            type="submit"
+        <div className="md:col-span-2 flex flex-wrap justify-center gap-3">
+          <PrimaryButton type="submit" disabled={isSubmitting}>
+            {editingCategoryId ? "Opslaan" : "Toevoegen"}
+          </PrimaryButton>
+
+          <SecondaryButton
+            type="button"
+            onClick={onCancelAction}
             disabled={isSubmitting}
           >
-            {editingCategoryId ? "Opslaan" : "Toevoegen"}
-          </button>
-
-          {editingCategoryId ? (
-            <button
-              className="rounded-lg border px-4 py-2 text-sm font-medium"
-              type="button"
-              onClick={onCancelAction}
-              disabled={isSubmitting}
-            >
-              Annuleren
-            </button>
-          ) : null}
+            Annuleren
+          </SecondaryButton>
         </div>
       </form>
     </section>

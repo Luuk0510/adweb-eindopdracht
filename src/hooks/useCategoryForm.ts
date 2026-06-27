@@ -13,12 +13,14 @@ type UseCategoryFormOptions = {
   bookId: string;
   user: User | null;
   refreshCategories: () => Promise<void>;
+  onSaved?: () => void;
 };
 
 export function useCategoryForm({
   bookId,
   user,
   refreshCategories,
+  onSaved,
 }: UseCategoryFormOptions) {
   const [formMessage, setFormMessage] = useState("");
   const [categoryName, setCategoryName] = useState("");
@@ -95,6 +97,7 @@ export function useCategoryForm({
         : "Categorie toegevoegd.";
       resetCategoryForm();
       setFormMessage(message);
+      onSaved?.();
     } catch (error) {
       setFormMessage(
         error instanceof Error

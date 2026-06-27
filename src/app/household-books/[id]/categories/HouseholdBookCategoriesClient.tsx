@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CategoryForm } from "@/components/household-books/categories/CategoryForm";
 import { CategoryList } from "@/components/household-books/categories/CategoryList";
 import { HouseholdBookSkeleton } from "@/components/household-books/feedback/HouseholdBookSkeleton";
+import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import { useCategoryForm } from "@/hooks/useCategoryForm";
 import { useHouseholdBookPage } from "@/hooks/useHouseholdBookPage";
 import { getCategoriesByHouseholdBookId } from "@/services/categoryService";
@@ -33,6 +34,7 @@ export function HouseholdBookCategoriesClient({
   );
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const [isFormOpen, setIsFormOpen] = useState(false);
   const backHref = cameFromDashboard
     ? "/dashboard"
     : `/household-books/${bookId}`;
@@ -40,7 +42,7 @@ export function HouseholdBookCategoriesClient({
     ? "Terug naar dashboard"
     : "Terug naar overzicht";
 
-  const refreshCategories = useCallback(async () => {
+  async function refreshCategories() {
     if (!user) {
       return;
     }
@@ -50,7 +52,7 @@ export function HouseholdBookCategoriesClient({
       user.uid,
     );
     setCategories(refreshedCategories);
-  }, [bookId, user]);
+  }
 
   const {
     categoryName,
@@ -70,6 +72,7 @@ export function HouseholdBookCategoriesClient({
     bookId,
     user,
     refreshCategories,
+    onSaved: () => setIsFormOpen(false),
   });
 
   useEffect(() => {
@@ -144,6 +147,21 @@ export function HouseholdBookCategoriesClient({
 
   const canManageCategories = book.ownerId === user?.uid;
 
+  function startCreatingCategory() {
+    resetCategoryForm();
+    setIsFormOpen(true);
+  }
+
+  function handleEditCategory(category: Category) {
+    startEditingCategory(category);
+    setIsFormOpen(true);
+  }
+
+  function closeCategoryForm() {
+    resetCategoryForm();
+    setIsFormOpen(false);
+  }
+
   return (
     <main className="mx-auto max-w-6xl p-8">
       <div className="flex items-center justify-between gap-4">
@@ -163,19 +181,37 @@ export function HouseholdBookCategoriesClient({
       </section>
 
       {canManageCategories && (
-        <CategoryForm
-          categoryName={categoryName}
-          maxBudgetInput={maxBudgetInput}
-          endDateInput={endDateInput}
-          editingCategoryId={editingCategoryId}
-          formMessage={formMessage}
-          isSubmitting={isSubmitting}
-          onCategoryNameChange={setCategoryName}
-          onMaxBudgetChange={setMaxBudgetInput}
-          onEndDateChange={setEndDateInput}
-          onSubmitAction={handleCategorySubmit}
-          onCancelAction={resetCategoryForm}
-        />
+        <div className="mt-6">
+          <PrimaryButton onClick={startCreatingCategory}>
+            Categorie toevoegen
+          </PrimaryButton>
+        </div>
+      )}
+
+      {canManageCategories && isFormOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4"
+          onClick={closeCategoryForm}
+        >
+          <div
+            className="w-full max-w-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <CategoryForm
+              categoryName={categoryName}
+              maxBudgetInput={maxBudgetInput}
+              endDateInput={endDateInput}
+              editingCategoryId={editingCategoryId}
+              formMessage={formMessage}
+              isSubmitting={isSubmitting}
+              onCategoryNameChange={setCategoryName}
+              onMaxBudgetChange={setMaxBudgetInput}
+              onEndDateChange={setEndDateInput}
+              onSubmitAction={handleCategorySubmit}
+              onCancelAction={closeCategoryForm}
+            />
+          </div>
+        </div>
       )}
 
       <CategoryList
@@ -183,7 +219,7 @@ export function HouseholdBookCategoriesClient({
         categories={categories}
         canManageCategories={canManageCategories}
         isSubmitting={isSubmitting}
-        onEditAction={startEditingCategory}
+        onEditAction={handleEditCategory}
         onDeleteAction={(categoryId) => void handleDeleteCategory(categoryId)}
       />
     </main>
