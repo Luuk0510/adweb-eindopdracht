@@ -1,6 +1,6 @@
 "use client";
 
-import { Dispatch, SetStateAction, useState } from "react";
+import { useState } from "react";
 import { User } from "firebase/auth";
 import {
   createTransaction,
@@ -18,7 +18,6 @@ type UseTransactionFormOptions = {
   bookId: string;
   user: User | null;
   transactions: Transaction[];
-  setTransactions: Dispatch<SetStateAction<Transaction[]>>;
   refreshTransactions: () => Promise<void>;
   setSelectedMonth: (month: string) => void;
 };
@@ -27,7 +26,6 @@ export function useTransactionForm({
   bookId,
   user,
   transactions,
-  setTransactions,
   refreshTransactions,
   setSelectedMonth,
 }: UseTransactionFormOptions) {
@@ -151,16 +149,6 @@ export function useTransactionForm({
       return;
     }
 
-    const previousTransactions = transactions;
-
-    setTransactions((currentTransactions) =>
-      currentTransactions.map((currentTransaction) =>
-        currentTransaction.id === transactionId
-          ? { ...currentTransaction, categoryId }
-          : currentTransaction,
-      ),
-    );
-
     try {
       await updateTransaction(transactionId, bookId, user.uid, {
         title: transaction.title,
@@ -169,9 +157,9 @@ export function useTransactionForm({
         date: transaction.date,
         categoryId,
       });
+      await refreshTransactions();
       setTransactionErrorMessage("");
     } catch (error) {
-      setTransactions(previousTransactions);
       setTransactionErrorMessage(
         error instanceof Error
           ? error.message

@@ -10,10 +10,7 @@ import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import { useCategoryForm } from "@/hooks/useCategoryForm";
 import { useHouseholdBookPage } from "@/hooks/useHouseholdBookPage";
 import { getCategoriesByHouseholdBookId } from "@/services/categoryService";
-import {
-  getCachedTransactions,
-  getTransactionsByHouseholdBookId,
-} from "@/services/transactionService";
+import { getTransactionsByHouseholdBookId } from "@/services/transactionService";
 import { Category } from "@/types/category";
 import { Transaction } from "@/types/transaction";
 import { getCategoryOverviews } from "@/utils/categoryCalculations";
@@ -30,9 +27,7 @@ export function HouseholdBookCategoriesClient({
   const { user, book, isCheckingAuth, isLoadingBook } =
     useHouseholdBookPage(bookId);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [transactions, setTransactions] = useState<Transaction[]>(
-    getCachedTransactions(bookId) ?? [],
-  );
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [isFormOpen, setIsFormOpen] = useState(false);

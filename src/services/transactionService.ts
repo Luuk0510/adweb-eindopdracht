@@ -14,17 +14,12 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import {
-  rethrowFriendlyFirestoreError,
-  toDate,
-} from "@/services/firestoreHelpers";
-import {
   getHouseholdBookById,
   getOwnedHouseholdBookById,
 } from "@/services/householdBookService";
 import { Transaction } from "@/types/transaction";
 
 const transactionsCollection = collection(db, "transactions");
-const transactionsCache = new Map<string, Transaction[]>();
 
 type TransactionInput = {
   title: string;
@@ -34,12 +29,12 @@ type TransactionInput = {
   categoryId: string | null;
 };
 
-export function getCachedTransactions(bookId: string) {
-  return transactionsCache.get(bookId) ?? null;
-}
+function getDate(value: { toDate?: () => Date } | Date | null | undefined) {
+  if (value instanceof Date) {
+    return value;
+  }
 
-function clearTransactionsCache(bookId: string) {
-  transactionsCache.delete(bookId);
+  return value?.toDate?.() ?? new Date();
 }
 
 function mapTransaction(documentId: string, data: DocumentData): Transaction {
@@ -50,10 +45,10 @@ function mapTransaction(documentId: string, data: DocumentData): Transaction {
     type: data.type === "income" ? "income" : "expense",
     title: data.title ?? data.description ?? "Onbekende transactie",
     amount: typeof data.amount === "number" ? data.amount : 0,
-    date: toDate(data.date),
+    date: getDate(data.date),
     createdBy: data.createdBy ?? "",
-    createdAt: toDate(data.createdAt),
-    updatedAt: toDate(data.updatedAt),
+    createdAt: getDate(data.createdAt),
+    updatedAt: getDate(data.updatedAt),
   };
 }
 
@@ -61,50 +56,53 @@ function getTransactionTitle(title: string) {
   return title.trim().slice(0, 50) || "Geen titel";
 }
 
+function validateTransactionAmount(amount: number) {
+  if (amount <= 0) {
+    throw new Error("Kosten zijn verplicht.");
+  }
+}
+
+async function getTransactionDocument(transactionId: string, bookId: string) {
+  const transactionReference = doc(db, "transactions", transactionId);
+  const transactionSnapshot = await getDoc(transactionReference);
+
+  if (!transactionSnapshot.exists()) {
+    throw new Error("Transactie bestaat niet.");
+  }
+
+  if (transactionSnapshot.data().bookId !== bookId) {
+    throw new Error("Deze transactie hoort niet bij dit huishoudboekje.");
+  }
+
+  return transactionReference;
+}
+
 export async function getTransactionsByHouseholdBookId(
   bookId: string,
   userId: string,
 ): Promise<Transaction[]> {
-  try {
-    const cachedTransactions = transactionsCache.get(bookId);
+  const book = await getHouseholdBookById(bookId, userId);
 
-    if (cachedTransactions) {
-      return cachedTransactions;
-    }
-
-    const book = await getHouseholdBookById(bookId, userId);
-
-    if (!book) {
-      throw new Error("Huishoudboekje niet gevonden.");
-    }
-
-    const transactionsQuery = query(
-      transactionsCollection,
-      where("bookId", "==", bookId),
-    );
-
-    const snapshot = await getDocs(transactionsQuery);
-
-    const transactions = snapshot.docs
-      .map((transactionDocument: QueryDocumentSnapshot<DocumentData>) =>
-        mapTransaction(
-          transactionDocument.id,
-          transactionDocument.data(),
-        ),
-      )
-      .sort((firstTransaction, secondTransaction) => {
-        return (
-          secondTransaction.date.getTime() -
-          firstTransaction.date.getTime()
-        );
-      });
-
-    transactionsCache.set(bookId, transactions);
-
-    return transactions;
-  } catch (error) {
-    rethrowFriendlyFirestoreError(error);
+  if (!book) {
+    throw new Error("Huishoudboekje niet gevonden.");
   }
+
+  const transactionsQuery = query(
+    transactionsCollection,
+    where("bookId", "==", bookId),
+  );
+
+  const snapshot = await getDocs(transactionsQuery);
+
+  return snapshot.docs
+    .map((transactionDocument: QueryDocumentSnapshot<DocumentData>) =>
+      mapTransaction(transactionDocument.id, transactionDocument.data()),
+    )
+    .sort((firstTransaction, secondTransaction) => {
+      return (
+        secondTransaction.date.getTime() - firstTransaction.date.getTime()
+      );
+    });
 }
 
 export async function createTransaction(
@@ -118,9 +116,7 @@ export async function createTransaction(
     "Alleen de eigenaar mag transacties toevoegen.",
   );
 
-  if (transaction.amount <= 0) {
-    throw new Error("Kosten zijn verplicht.");
-  }
+  validateTransactionAmount(transaction.amount);
 
   const newTransaction = await addDoc(transactionsCollection, {
     bookId,
@@ -133,8 +129,6 @@ export async function createTransaction(
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });
-
-  clearTransactionsCache(bookId);
 
   return newTransaction;
 }
@@ -151,20 +145,12 @@ export async function updateTransaction(
     "Alleen de eigenaar mag transacties aanpassen.",
   );
 
-  if (transaction.amount <= 0) {
-    throw new Error("Kosten zijn verplicht.");
-  }
+  validateTransactionAmount(transaction.amount);
 
-  const transactionReference = doc(db, "transactions", transactionId);
-  const transactionSnapshot = await getDoc(transactionReference);
-
-  if (!transactionSnapshot.exists()) {
-    throw new Error("Transactie bestaat niet.");
-  }
-
-  if (transactionSnapshot.data().bookId !== bookId) {
-    throw new Error("Deze transactie hoort niet bij dit huishoudboekje.");
-  }
+  const transactionReference = await getTransactionDocument(
+    transactionId,
+    bookId,
+  );
 
   await updateDoc(transactionReference, {
     type: transaction.type,
@@ -174,8 +160,6 @@ export async function updateTransaction(
     categoryId: transaction.categoryId,
     updatedAt: serverTimestamp(),
   });
-
-  clearTransactionsCache(bookId);
 }
 
 export async function deleteTransaction(
@@ -189,18 +173,10 @@ export async function deleteTransaction(
     "Alleen de eigenaar mag transacties verwijderen.",
   );
 
-  const transactionReference = doc(db, "transactions", transactionId);
-  const transactionSnapshot = await getDoc(transactionReference);
-
-  if (!transactionSnapshot.exists()) {
-    throw new Error("Transactie bestaat niet.");
-  }
-
-  if (transactionSnapshot.data().bookId !== bookId) {
-    throw new Error("Deze transactie hoort niet bij dit huishoudboekje.");
-  }
+  const transactionReference = await getTransactionDocument(
+    transactionId,
+    bookId,
+  );
 
   await deleteDoc(transactionReference);
-
-  clearTransactionsCache(bookId);
 }

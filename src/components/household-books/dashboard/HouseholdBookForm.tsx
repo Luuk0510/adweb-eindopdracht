@@ -44,6 +44,7 @@ export function HouseholdBookForm({
             className="mt-1 w-full rounded-lg border p-2"
             value={name}
             onChange={(event) => onNameChange(event.target.value)}
+            maxLength={50}
             required
           />
         </div>
@@ -57,6 +58,7 @@ export function HouseholdBookForm({
             className="mt-1 w-full rounded-lg border p-2"
             value={description}
             onChange={(event) => onDescriptionChange(event.target.value)}
+            maxLength={50}
             rows={3}
           />
         </div>

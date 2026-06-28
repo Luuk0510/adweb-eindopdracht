@@ -8,8 +8,9 @@ const config = {
   clearMocks: true,
   collectCoverageFrom: [
     "src/components/**/*.{ts,tsx}",
+    "src/utils/**/*.{ts,tsx}",
     "!src/**/*.d.ts",
-    "!src/components/household-books/FinancialOverview.tsx",
+    "!src/components/household-books/detail/FinancialOverview.tsx",
   ],
   moduleNameMapper: {
     "^recharts$": "<rootDir>/src/tests/mocks/recharts.tsx",
