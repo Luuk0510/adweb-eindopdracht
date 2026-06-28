@@ -44,7 +44,6 @@ export function FinancialOverview({
 
   const {
     transactions,
-    setTransactions,
     categories,
     setSelectedMonth,
     isLoading,
@@ -80,7 +79,6 @@ export function FinancialOverview({
     bookId,
     user,
     transactions,
-    setTransactions,
     refreshTransactions,
     setSelectedMonth,
   });

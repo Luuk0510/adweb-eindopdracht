@@ -6,7 +6,6 @@ import {
   FirestoreError,
   getDoc,
   onSnapshot,
-  QueryDocumentSnapshot,
   QuerySnapshot,
   query,
   serverTimestamp,
@@ -14,18 +13,19 @@ import {
   where,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { getFriendlyFirestoreErrorMessage } from "@/services/firestoreHelpers";
 import { HouseholdBook } from "@/types/householdBook";
 
 const householdBooksCollection = collection(db, "householdBooks");
-const householdBookCache = new Map<string, HouseholdBook>();
 
-function cacheHouseholdBook(book: HouseholdBook) {
-  householdBookCache.set(book.id, book);
-}
+function getParticipantEmails(data: DocumentData) {
+  if (
+    typeof data.participantEmails === "object" &&
+    data.participantEmails !== null
+  ) {
+    return data.participantEmails as Record<string, string>;
+  }
 
-export function getCachedHouseholdBook(bookId: string) {
-  return householdBookCache.get(bookId) ?? null;
+  return {};
 }
 
 function handleSnapshotError(error: FirestoreError) {
@@ -46,10 +46,23 @@ function mapHouseholdBook(
     description: data.description ?? "",
     ownerId: data.ownerId ?? "",
     participantIds: data.participantIds ?? [],
+    participantEmails: getParticipantEmails(data),
     isArchived: data.isArchived ?? false,
     createdAt: data.createdAt?.toDate?.() ?? new Date(),
     updatedAt: data.updatedAt?.toDate?.() ?? new Date(),
   };
+}
+
+function getBooksFromSnapshot(snapshot: QuerySnapshot<DocumentData>) {
+  return snapshot.docs
+    .map((document) => mapHouseholdBook(document.id, document.data()))
+    .sort((firstBook, secondBook) => {
+      return secondBook.createdAt.getTime() - firstBook.createdAt.getTime();
+    });
+}
+
+function getHouseholdBookText(value: string) {
+  return value.trim().slice(0, 50);
 }
 
 export function listenToActiveHouseholdBooks(
@@ -65,15 +78,7 @@ export function listenToActiveHouseholdBooks(
   return onSnapshot(
     householdBooksQuery,
     (snapshot: QuerySnapshot<DocumentData>) => {
-      const books = snapshot.docs
-        .map((document: QueryDocumentSnapshot<DocumentData>) =>
-          mapHouseholdBook(document.id, document.data()),
-        )
-        .sort((firstBook, secondBook) => {
-          return secondBook.createdAt.getTime() - firstBook.createdAt.getTime();
-        });
-
-      callback(books);
+      callback(getBooksFromSnapshot(snapshot));
     },
     (error) => {
       handleSnapshotError(error);
@@ -93,14 +98,9 @@ export function listenToParticipantHouseholdBooks(
   return onSnapshot(
     householdBooksQuery,
     (snapshot: QuerySnapshot<DocumentData>) => {
-      const books = snapshot.docs
-        .map((document: QueryDocumentSnapshot<DocumentData>) =>
-          mapHouseholdBook(document.id, document.data()),
-        )
-        .filter((book) => !book.isArchived)
-        .sort((firstBook, secondBook) => {
-          return secondBook.createdAt.getTime() - firstBook.createdAt.getTime();
-        });
+      const books = getBooksFromSnapshot(snapshot).filter((book) => {
+        return !book.isArchived;
+      });
 
       callback(books);
     },
@@ -123,15 +123,7 @@ export function listenToArchivedHouseholdBooks(
   return onSnapshot(
     householdBooksQuery,
     (snapshot: QuerySnapshot<DocumentData>) => {
-      const books = snapshot.docs
-        .map((document: QueryDocumentSnapshot<DocumentData>) =>
-          mapHouseholdBook(document.id, document.data()),
-        )
-        .sort((firstBook, secondBook) => {
-          return secondBook.createdAt.getTime() - firstBook.createdAt.getTime();
-        });
-
-      callback(books);
+      callback(getBooksFromSnapshot(snapshot));
     },
     (error) => {
       handleSnapshotError(error);
@@ -144,15 +136,18 @@ export async function createHouseholdBook(
   name: string,
   description: string,
 ) {
-  if (!name.trim()) {
+  const bookName = getHouseholdBookText(name);
+
+  if (!bookName) {
     throw new Error("Naam is verplicht.");
   }
 
   return addDoc(householdBooksCollection, {
-    name: name.trim(),
-    description: description.trim(),
+    name: bookName,
+    description: getHouseholdBookText(description),
     ownerId: userId,
     participantIds: [],
+    participantEmails: {},
     isArchived: false,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
@@ -160,48 +155,22 @@ export async function createHouseholdBook(
 }
 
 export async function getHouseholdBookById(bookId: string, userId: string) {
-  try {
-    const cachedBook = householdBookCache.get(bookId);
+  const bookReference = doc(db, "householdBooks", bookId);
+  const bookSnapshot = await getDoc(bookReference);
 
-    if (cachedBook) {
-      const canOpenBook =
-        cachedBook.ownerId === userId ||
-        cachedBook.participantIds.includes(userId);
-
-      if (canOpenBook && !cachedBook.isArchived) {
-        return cachedBook;
-      }
-    }
-
-    const bookReference = doc(db, "householdBooks", bookId);
-    const bookSnapshot = await getDoc(bookReference);
-
-    if (!bookSnapshot.exists()) {
-      return null;
-    }
-
-    const data = bookSnapshot.data();
-    const participantIds = data.participantIds ?? [];
-    const isParticipant = participantIds.includes(userId);
-
-    if ((data.ownerId !== userId && !isParticipant) || data.isArchived) {
-      return null;
-    }
-
-    const book = mapHouseholdBook(bookSnapshot.id, data);
-
-    cacheHouseholdBook(book);
-
-    return book;
-  } catch (error) {
-    const friendlyMessage = getFriendlyFirestoreErrorMessage(error);
-
-    if (friendlyMessage) {
-      throw new Error(friendlyMessage);
-    }
-
-    throw error;
+  if (!bookSnapshot.exists()) {
+    return null;
   }
+
+  const data = bookSnapshot.data();
+  const participantIds = data.participantIds ?? [];
+  const isParticipant = participantIds.includes(userId);
+
+  if ((data.ownerId !== userId && !isParticipant) || data.isArchived) {
+    return null;
+  }
+
+  return mapHouseholdBook(bookSnapshot.id, data);
 }
 
 export async function getOwnedHouseholdBookById(
@@ -252,6 +221,7 @@ export async function archiveHouseholdBook(bookId: string, userId: string) {
 
   return updateDoc(bookReference, {
     participantIds: bookData.participantIds ?? [],
+    participantEmails: getParticipantEmails(bookData),
     isArchived: true,
     updatedAt: serverTimestamp(),
   });
@@ -266,6 +236,7 @@ export async function restoreHouseholdBook(bookId: string, userId: string) {
 
   return updateDoc(bookReference, {
     participantIds: bookData.participantIds ?? [],
+    participantEmails: getParticipantEmails(bookData),
     isArchived: false,
     updatedAt: serverTimestamp(),
   });
@@ -277,7 +248,9 @@ export async function updateHouseholdBook(
   name: string,
   description: string,
 ) {
-  if (!name.trim()) {
+  const bookName = getHouseholdBookText(name);
+
+  if (!bookName) {
     throw new Error("Naam is verplicht.");
   }
 
@@ -288,9 +261,10 @@ export async function updateHouseholdBook(
   );
 
   return updateDoc(bookReference, {
-    name: name.trim(),
-    description: description.trim(),
+    name: bookName,
+    description: getHouseholdBookText(description),
     participantIds: bookData.participantIds ?? [],
+    participantEmails: getParticipantEmails(bookData),
     updatedAt: serverTimestamp(),
   });
 }
@@ -299,6 +273,7 @@ export async function addHouseholdBookParticipant(
   bookId: string,
   ownerId: string,
   participantId: string,
+  participantEmail: string,
 ) {
   if (!participantId.trim()) {
     throw new Error("Gebruiker id is verplicht.");
@@ -311,18 +286,30 @@ export async function addHouseholdBookParticipant(
   );
 
   const participantIds = bookData.participantIds ?? [];
+  const participantEmails = getParticipantEmails(bookData);
   const newParticipantId = participantId.trim();
+  const newParticipantEmail = participantEmail.trim().toLowerCase();
 
   if (newParticipantId === ownerId) {
     throw new Error("De eigenaar hoeft niet toegevoegd te worden.");
   }
 
   if (participantIds.includes(newParticipantId)) {
-    throw new Error("Deze deelnemer is al toegevoegd.");
+    return updateDoc(bookReference, {
+      participantEmails: {
+        ...participantEmails,
+        [newParticipantId]: newParticipantEmail,
+      },
+      updatedAt: serverTimestamp(),
+    });
   }
 
   return updateDoc(bookReference, {
     participantIds: [...participantIds, newParticipantId],
+    participantEmails: {
+      ...participantEmails,
+      [newParticipantId]: newParticipantEmail,
+    },
     updatedAt: serverTimestamp(),
   });
 }

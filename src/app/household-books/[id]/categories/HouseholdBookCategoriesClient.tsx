@@ -5,14 +5,12 @@ import { useEffect, useMemo, useState } from "react";
 import { CategoryForm } from "@/components/household-books/categories/CategoryForm";
 import { CategoryList } from "@/components/household-books/categories/CategoryList";
 import { HouseholdBookSkeleton } from "@/components/household-books/feedback/HouseholdBookSkeleton";
+import { Modal } from "@/components/ui/Modal";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import { useCategoryForm } from "@/hooks/useCategoryForm";
 import { useHouseholdBookPage } from "@/hooks/useHouseholdBookPage";
 import { getCategoriesByHouseholdBookId } from "@/services/categoryService";
-import {
-  getCachedTransactions,
-  getTransactionsByHouseholdBookId,
-} from "@/services/transactionService";
+import { getTransactionsByHouseholdBookId } from "@/services/transactionService";
 import { Category } from "@/types/category";
 import { Transaction } from "@/types/transaction";
 import { getCategoryOverviews } from "@/utils/categoryCalculations";
@@ -29,9 +27,7 @@ export function HouseholdBookCategoriesClient({
   const { user, book, isCheckingAuth, isLoadingBook } =
     useHouseholdBookPage(bookId);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [transactions, setTransactions] = useState<Transaction[]>(
-    getCachedTransactions(bookId) ?? [],
-  );
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -189,29 +185,21 @@ export function HouseholdBookCategoriesClient({
       )}
 
       {canManageCategories && isFormOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4"
-          onClick={closeCategoryForm}
-        >
-          <div
-            className="w-full max-w-2xl"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <CategoryForm
-              categoryName={categoryName}
-              maxBudgetInput={maxBudgetInput}
-              endDateInput={endDateInput}
-              editingCategoryId={editingCategoryId}
-              formMessage={formMessage}
-              isSubmitting={isSubmitting}
-              onCategoryNameChange={setCategoryName}
-              onMaxBudgetChange={setMaxBudgetInput}
-              onEndDateChange={setEndDateInput}
-              onSubmitAction={handleCategorySubmit}
-              onCancelAction={closeCategoryForm}
-            />
-          </div>
-        </div>
+        <Modal onClose={closeCategoryForm}>
+          <CategoryForm
+            categoryName={categoryName}
+            maxBudgetInput={maxBudgetInput}
+            endDateInput={endDateInput}
+            editingCategoryId={editingCategoryId}
+            formMessage={formMessage}
+            isSubmitting={isSubmitting}
+            onCategoryNameChange={setCategoryName}
+            onMaxBudgetChange={setMaxBudgetInput}
+            onEndDateChange={setEndDateInput}
+            onSubmitAction={handleCategorySubmit}
+            onCancelAction={closeCategoryForm}
+          />
+        </Modal>
       )}
 
       <CategoryList

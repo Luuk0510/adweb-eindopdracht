@@ -1,12 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { SubmitEvent, useState } from "react";
+import { SubmitEvent, useEffect, useState } from "react";
 import { HouseholdBookNotAvailable } from "@/components/household-books/feedback/HouseholdBookNotAvailable";
 import { HouseholdBookSkeleton } from "@/components/household-books/feedback/HouseholdBookSkeleton";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import { useHouseholdBookPage } from "@/hooks/useHouseholdBookPage";
 import { addHouseholdBookParticipant } from "@/services/householdBookService";
+import {
+  getUserProfileByEmail,
+  getUserProfileById,
+} from "@/services/userService";
+import { UserProfile } from "@/types/userProfile";
 
 type HouseholdBookMembersClientProps = {
   bookId: string;
@@ -17,8 +22,59 @@ export function HouseholdBookMembersClient({
 }: HouseholdBookMembersClientProps) {
   const { user, book, setBook, isCheckingAuth, isLoadingBook } =
     useHouseholdBookPage(bookId);
-  const [participantId, setParticipantId] = useState("");
+  const [participantEmail, setParticipantEmail] = useState("");
+  const [participantProfiles, setParticipantProfiles] = useState<UserProfile[]>(
+    [],
+  );
   const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadParticipantProfiles() {
+      if (!book) {
+        return;
+      }
+
+      try {
+        const profiles = await Promise.all(
+          book.participantIds.map((participantId) =>
+            getUserProfileById(participantId),
+          ),
+        );
+
+        if (isMounted) {
+          setParticipantProfiles(
+            profiles.filter(
+              (profile): profile is UserProfile => profile !== null,
+            ),
+          );
+        }
+      } catch {
+        if (isMounted) {
+          setParticipantProfiles([]);
+        }
+      }
+    }
+
+    void loadParticipantProfiles();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [book]);
+
+  function getParticipantLabel(participantId: string) {
+    const participantProfile = participantProfiles.find((profile) => {
+      return profile.uid === participantId;
+    });
+
+    return (
+      participantProfile?.email ??
+      book?.participantEmails[participantId] ??
+      "E-mailadres onbekend"
+    );
+  }
 
   async function handleAddParticipant(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -29,12 +85,32 @@ export function HouseholdBookMembersClient({
     }
 
     try {
-      await addHouseholdBookParticipant(book.id, user.uid, participantId);
+      const participantProfile = await getUserProfileByEmail(participantEmail);
+
+      await addHouseholdBookParticipant(
+        book.id,
+        user.uid,
+        participantProfile.uid,
+        participantProfile.email,
+      );
+      const participantIds = book.participantIds.includes(participantProfile.uid)
+        ? book.participantIds
+        : [...book.participantIds, participantProfile.uid];
+
       setBook({
         ...book,
-        participantIds: [...book.participantIds, participantId.trim()],
+        participantIds,
+        participantEmails: {
+          ...book.participantEmails,
+          [participantProfile.uid]: participantProfile.email,
+        },
       });
-      setParticipantId("");
+      if (
+        !participantProfiles.some((profile) => profile.uid === participantProfile.uid)
+      ) {
+        setParticipantProfiles([...participantProfiles, participantProfile]);
+      }
+      setParticipantEmail("");
       setMessage("Deelnemer toegevoegd.");
     } catch (error) {
       if (error instanceof Error) {
@@ -71,12 +147,13 @@ export function HouseholdBookMembersClient({
           <form onSubmit={handleAddParticipant} className="space-y-4">
             <div>
               <label className="block text-sm font-medium">
-                Firebase gebruiker id
+                E-mailadres deelnemer
               </label>
               <input
                 className="mt-1 w-full rounded-lg border p-2"
-                value={participantId}
-                onChange={(event) => setParticipantId(event.target.value)}
+                type="email"
+                value={participantEmail}
+                onChange={(event) => setParticipantEmail(event.target.value)}
                 required
               />
             </div>
@@ -101,7 +178,7 @@ export function HouseholdBookMembersClient({
             ) : (
               <ul className="mt-2 list-inside list-disc break-words text-sm text-gray-600">
                 {book.participantIds.map((id) => (
-                  <li key={id}>{id}</li>
+                  <li key={id}>{getParticipantLabel(id)}</li>
                 ))}
               </ul>
             )}

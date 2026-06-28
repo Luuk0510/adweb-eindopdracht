@@ -7,6 +7,7 @@ import { useHouseholdBooks } from "@/hooks/useHouseholdBooks";
 import { ArchivedHouseholdBookList } from "@/components/household-books/dashboard/ArchivedHouseholdBookList";
 import { HouseholdBookForm } from "@/components/household-books/dashboard/HouseholdBookForm";
 import { HouseholdBookList } from "@/components/household-books/dashboard/HouseholdBookList";
+import { Modal } from "@/components/ui/Modal";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import { SecondaryButton } from "@/components/ui/SecondaryButton";
 import {
@@ -150,26 +151,18 @@ export default function DashboardPage() {
       </div>
 
       {isFormOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4"
-          onClick={resetForm}
-        >
-          <div
-            className="w-full max-w-2xl"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <HouseholdBookForm
-              name={name}
-              description={description}
-              editingBookId={editingBookId}
-              errorMessage={errorMessage}
-              onNameChange={setName}
-              onDescriptionChange={setDescription}
-              onSubmit={handleSubmit}
-              onCancel={resetForm}
-            />
-          </div>
-        </div>
+        <Modal onClose={resetForm}>
+          <HouseholdBookForm
+            name={name}
+            description={description}
+            editingBookId={editingBookId}
+            errorMessage={errorMessage}
+            onNameChange={setName}
+            onDescriptionChange={setDescription}
+            onSubmit={handleSubmit}
+            onCancel={resetForm}
+          />
+        </Modal>
       )}
 
       <section className="mt-8">

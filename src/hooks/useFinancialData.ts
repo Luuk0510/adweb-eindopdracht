@@ -1,12 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { User } from "firebase/auth";
 import { getCategoriesByHouseholdBookId } from "@/services/categoryService";
-import {
-  getCachedTransactions,
-  getTransactionsByHouseholdBookId,
-} from "@/services/transactionService";
+import { getTransactionsByHouseholdBookId } from "@/services/transactionService";
 import { Category } from "@/types/category";
 import { Transaction } from "@/types/transaction";
 import {
@@ -19,16 +16,10 @@ import {
 } from "@/utils/financialCalculations";
 
 export function useFinancialData(bookId: string, user: User | null) {
-  const cachedTransactions = getCachedTransactions(bookId);
-
-  const [transactions, setTransactions] = useState<Transaction[]>(
-    cachedTransactions ?? [],
-  );
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [selectedMonth, setSelectedMonth] = useState<string>(
-    cachedTransactions?.[0] ? getMonthKey(cachedTransactions[0].date) : "",
-  );
-  const [isLoading, setIsLoading] = useState(!cachedTransactions);
+  const [selectedMonth, setSelectedMonth] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
@@ -91,28 +82,21 @@ export function useFinancialData(bookId: string, user: User | null) {
     };
   }, [bookId, user]);
 
-  const availableMonths = useMemo(() => {
-    return getAvailableMonths(transactions);
-  }, [transactions]);
-
-  const monthlyChartData = useMemo(() => {
-    return getMonthlyChartData(transactions);
-  }, [transactions]);
+  const availableMonths = getAvailableMonths(transactions);
+  const monthlyChartData = getMonthlyChartData(transactions);
 
   const effectiveMonth =
     selectedMonth || availableMonths[0] || getMonthKey(new Date());
 
-  const monthlyTransactions = useMemo(() => {
-    return getMonthlyTransactions(transactions, effectiveMonth);
-  }, [effectiveMonth, transactions]);
-
-  const categoryExpenseData = useMemo(() => {
-    return getCategoryExpenseData(monthlyTransactions, categories);
-  }, [categories, monthlyTransactions]);
-
-  const summaryCards = useMemo(() => {
-    return getFinancialSummaryCards(monthlyTransactions);
-  }, [monthlyTransactions]);
+  const monthlyTransactions = getMonthlyTransactions(
+    transactions,
+    effectiveMonth,
+  );
+  const categoryExpenseData = getCategoryExpenseData(
+    monthlyTransactions,
+    categories,
+  );
+  const summaryCards = getFinancialSummaryCards(monthlyTransactions);
 
   async function refreshTransactions() {
     if (!user) {
@@ -127,7 +111,6 @@ export function useFinancialData(bookId: string, user: User | null) {
 
   return {
     transactions,
-    setTransactions,
     categories,
     selectedMonth,
     setSelectedMonth,

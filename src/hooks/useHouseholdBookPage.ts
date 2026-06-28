@@ -2,17 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
-import {
-  getCachedHouseholdBook,
-  getHouseholdBookById,
-} from "@/services/householdBookService";
+import { getHouseholdBookById } from "@/services/householdBookService";
 import { HouseholdBook } from "@/types/householdBook";
 
 export function useHouseholdBookPage(bookId: string) {
   const { user, isCheckingAuth } = useAuthRedirect();
-  const cachedBook = getCachedHouseholdBook(bookId);
-  const [book, setBook] = useState<HouseholdBook | null>(cachedBook);
-  const [isLoadingBook, setIsLoadingBook] = useState(!cachedBook);
+  const [book, setBook] = useState<HouseholdBook | null>(null);
+  const [isLoadingBook, setIsLoadingBook] = useState(true);
 
   useEffect(() => {
     if (!user) {
