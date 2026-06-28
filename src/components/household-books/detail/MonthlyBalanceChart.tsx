@@ -35,9 +35,6 @@ export function MonthlyBalanceChart({
           <h2 className="text-xl font-semibold text-slate-950">
             Maandelijkse balansgrafiek
           </h2>
-          <p className="mt-1 text-sm text-slate-600">
-            Bekijk inkomsten en uitgaven per maand als lijngrafiek.
-          </p>
         </div>
       </div>
 

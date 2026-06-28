@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
+import { combineLatest } from "rxjs";
 import { CategoryForm } from "@/components/household-books/categories/CategoryForm";
 import { CategoryList } from "@/components/household-books/categories/CategoryList";
 import { HouseholdBookSkeleton } from "@/components/household-books/feedback/HouseholdBookSkeleton";
@@ -9,8 +10,11 @@ import { Modal } from "@/components/ui/Modal";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import { useCategoryForm } from "@/hooks/useCategoryForm";
 import { useHouseholdBookPage } from "@/hooks/useHouseholdBookPage";
-import { getCategoriesByHouseholdBookId } from "@/services/categoryService";
-import { getTransactionsByHouseholdBookId } from "@/services/transactionService";
+import {
+  getCategoriesByHouseholdBookId,
+  getCategoriesObservable,
+} from "@/services/categoryService";
+import { getTransactionsObservable } from "@/services/transactionService";
 import { Category } from "@/types/category";
 import { Transaction } from "@/types/transaction";
 import { getCategoryOverviews } from "@/utils/categoryCalculations";
@@ -72,53 +76,36 @@ export function HouseholdBookCategoriesClient({
   });
 
   useEffect(() => {
-    let isMounted = true;
-
-    async function loadData() {
-      if (!user) {
-        return;
-      }
-
-      setIsLoadingData(true);
-      setErrorMessage("");
-
-      try {
-        const [foundCategories, foundTransactions] = await Promise.all([
-          getCategoriesByHouseholdBookId(bookId, user.uid),
-          getTransactionsByHouseholdBookId(bookId, user.uid),
-        ]);
-
-        if (isMounted) {
-          setCategories(foundCategories);
-          setTransactions(foundTransactions);
-        }
-      } catch (error) {
-        if (isMounted) {
-          if (error instanceof Error) {
-            setErrorMessage(error.message);
-          } else {
-            setErrorMessage(
-              "Er is iets misgegaan bij het laden van categorieen.",
-            );
-          }
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoadingData(false);
-        }
-      }
+    if (!user) {
+      return;
     }
 
-    void loadData();
+    const subscription = combineLatest([
+      getCategoriesObservable(bookId),
+      getTransactionsObservable(bookId),
+    ]).subscribe({
+      next: ([foundCategories, foundTransactions]) => {
+        setErrorMessage("");
+        setCategories(foundCategories);
+        setTransactions(foundTransactions);
+        setIsLoadingData(false);
+      },
+      error: (error) => {
+        if (error instanceof Error) {
+          setErrorMessage(error.message);
+        } else {
+          setErrorMessage("Er is iets misgegaan bij het laden van categorieen.");
+        }
+        setIsLoadingData(false);
+      },
+    });
 
     return () => {
-      isMounted = false;
+      subscription.unsubscribe();
     };
   }, [bookId, user]);
 
-  const categoryOverviews = useMemo(() => {
-    return getCategoryOverviews(categories, transactions);
-  }, [categories, transactions]);
+  const categoryOverviews = getCategoryOverviews(categories, transactions);
 
   if (isCheckingAuth || isLoadingBook || isLoadingData) {
     return <HouseholdBookSkeleton />;

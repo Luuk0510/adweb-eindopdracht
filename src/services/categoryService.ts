@@ -6,12 +6,15 @@ import {
   DocumentData,
   getDoc,
   getDocs,
+  onSnapshot,
   QueryDocumentSnapshot,
+  QuerySnapshot,
   query,
   serverTimestamp,
   updateDoc,
   where,
 } from "firebase/firestore";
+import { Observable } from "rxjs";
 import { db } from "@/lib/firebase";
 import {
   getHouseholdBookById,
@@ -43,6 +46,16 @@ function mapCategory(documentId: string, data: DocumentData): Category {
 
 function getCategoryName(name: string) {
   return name.trim().slice(0, 50);
+}
+
+function getCategoriesFromSnapshot(snapshot: QuerySnapshot<DocumentData>) {
+  return snapshot.docs
+    .map((categoryDocument: QueryDocumentSnapshot<DocumentData>) =>
+      mapCategory(categoryDocument.id, categoryDocument.data()),
+    )
+    .sort((firstCategory, secondCategory) => {
+      return firstCategory.name.localeCompare(secondCategory.name);
+    });
 }
 
 function getValidCategoryInput(name: string, maxBudget: number) {
@@ -95,13 +108,28 @@ export async function getCategoriesByHouseholdBookId(
 
   const snapshot = await getDocs(categoriesQuery);
 
-  return snapshot.docs
-    .map((categoryDocument: QueryDocumentSnapshot<DocumentData>) =>
-      mapCategory(categoryDocument.id, categoryDocument.data()),
-    )
-    .sort((firstCategory, secondCategory) => {
-      return firstCategory.name.localeCompare(secondCategory.name);
-    });
+  return getCategoriesFromSnapshot(snapshot);
+}
+
+export function getCategoriesObservable(bookId: string) {
+  const categoriesQuery = query(
+    categoriesCollection,
+    where("bookId", "==", bookId),
+  );
+
+  return new Observable<Category[]>((subscriber) => {
+    const unsubscribe = onSnapshot(
+      categoriesQuery,
+      (snapshot: QuerySnapshot<DocumentData>) => {
+        subscriber.next(getCategoriesFromSnapshot(snapshot));
+      },
+      (error) => {
+        subscriber.error(error);
+      },
+    );
+
+    return () => unsubscribe();
+  });
 }
 
 export async function createCategory(

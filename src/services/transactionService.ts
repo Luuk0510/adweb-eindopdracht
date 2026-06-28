@@ -6,12 +6,15 @@ import {
   DocumentData,
   getDoc,
   getDocs,
+  onSnapshot,
   QueryDocumentSnapshot,
+  QuerySnapshot,
   query,
   serverTimestamp,
   updateDoc,
   where,
 } from "firebase/firestore";
+import { Observable } from "rxjs";
 import { db } from "@/lib/firebase";
 import {
   getHouseholdBookById,
@@ -56,6 +59,18 @@ function getTransactionTitle(title: string) {
   return title.trim().slice(0, 50) || "Geen titel";
 }
 
+function getTransactionsFromSnapshot(snapshot: QuerySnapshot<DocumentData>) {
+  return snapshot.docs
+    .map((transactionDocument: QueryDocumentSnapshot<DocumentData>) =>
+      mapTransaction(transactionDocument.id, transactionDocument.data()),
+    )
+    .sort((firstTransaction, secondTransaction) => {
+      return (
+        secondTransaction.date.getTime() - firstTransaction.date.getTime()
+      );
+    });
+}
+
 function validateTransactionAmount(amount: number) {
   if (amount <= 0) {
     throw new Error("Kosten zijn verplicht.");
@@ -94,15 +109,28 @@ export async function getTransactionsByHouseholdBookId(
 
   const snapshot = await getDocs(transactionsQuery);
 
-  return snapshot.docs
-    .map((transactionDocument: QueryDocumentSnapshot<DocumentData>) =>
-      mapTransaction(transactionDocument.id, transactionDocument.data()),
-    )
-    .sort((firstTransaction, secondTransaction) => {
-      return (
-        secondTransaction.date.getTime() - firstTransaction.date.getTime()
-      );
-    });
+  return getTransactionsFromSnapshot(snapshot);
+}
+
+export function getTransactionsObservable(bookId: string) {
+  const transactionsQuery = query(
+    transactionsCollection,
+    where("bookId", "==", bookId),
+  );
+
+  return new Observable<Transaction[]>((subscriber) => {
+    const unsubscribe = onSnapshot(
+      transactionsQuery,
+      (snapshot: QuerySnapshot<DocumentData>) => {
+        subscriber.next(getTransactionsFromSnapshot(snapshot));
+      },
+      (error) => {
+        subscriber.error(error);
+      },
+    );
+
+    return () => unsubscribe();
+  });
 }
 
 export async function createTransaction(

@@ -6,12 +6,14 @@ import {
   FirestoreError,
   getDoc,
   onSnapshot,
+  Query,
   QuerySnapshot,
   query,
   serverTimestamp,
   updateDoc,
   where,
 } from "firebase/firestore";
+import { Observable } from "rxjs";
 import { db } from "@/lib/firebase";
 import { HouseholdBook } from "@/types/householdBook";
 
@@ -65,70 +67,63 @@ function getHouseholdBookText(value: string) {
   return value.trim().slice(0, 50);
 }
 
-export function listenToActiveHouseholdBooks(
-  userId: string,
-  callback: (books: HouseholdBook[]) => void,
-) {
+function getBooksObservable(householdBooksQuery: Query<DocumentData>) {
+  return new Observable<HouseholdBook[]>((subscriber) => {
+    const unsubscribe = onSnapshot(
+      householdBooksQuery,
+      (snapshot: QuerySnapshot<DocumentData>) => {
+        subscriber.next(getBooksFromSnapshot(snapshot));
+      },
+      (error) => {
+        handleSnapshotError(error);
+        subscriber.error(error);
+      },
+    );
+
+    return () => unsubscribe();
+  });
+}
+
+export function getActiveHouseholdBooksObservable(userId: string) {
   const householdBooksQuery = query(
     householdBooksCollection,
     where("ownerId", "==", userId),
     where("isArchived", "==", false),
   );
 
-  return onSnapshot(
-    householdBooksQuery,
-    (snapshot: QuerySnapshot<DocumentData>) => {
-      callback(getBooksFromSnapshot(snapshot));
-    },
-    (error) => {
-      handleSnapshotError(error);
-    },
-  );
+  return getBooksObservable(householdBooksQuery);
 }
 
-export function listenToParticipantHouseholdBooks(
-  userId: string,
-  callback: (books: HouseholdBook[]) => void,
-) {
+export function getParticipantHouseholdBooksObservable(userId: string) {
   const householdBooksQuery = query(
     householdBooksCollection,
     where("participantIds", "array-contains", userId),
   );
 
-  return onSnapshot(
-    householdBooksQuery,
-    (snapshot: QuerySnapshot<DocumentData>) => {
-      const books = getBooksFromSnapshot(snapshot).filter((book) => {
-        return !book.isArchived;
-      });
+  return new Observable<HouseholdBook[]>((subscriber) => {
+    const subscription = getBooksObservable(householdBooksQuery).subscribe({
+      next: (books) => {
+        subscriber.next(
+          books.filter((book) => {
+            return !book.isArchived;
+          }),
+        );
+      },
+      error: (error) => subscriber.error(error),
+    });
 
-      callback(books);
-    },
-    (error) => {
-      handleSnapshotError(error);
-    },
-  );
+    return () => subscription.unsubscribe();
+  });
 }
 
-export function listenToArchivedHouseholdBooks(
-  userId: string,
-  callback: (books: HouseholdBook[]) => void,
-) {
+export function getArchivedHouseholdBooksObservable(userId: string) {
   const householdBooksQuery = query(
     householdBooksCollection,
     where("ownerId", "==", userId),
     where("isArchived", "==", true),
   );
 
-  return onSnapshot(
-    householdBooksQuery,
-    (snapshot: QuerySnapshot<DocumentData>) => {
-      callback(getBooksFromSnapshot(snapshot));
-    },
-    (error) => {
-      handleSnapshotError(error);
-    },
-  );
+  return getBooksObservable(householdBooksQuery);
 }
 
 export async function createHouseholdBook(

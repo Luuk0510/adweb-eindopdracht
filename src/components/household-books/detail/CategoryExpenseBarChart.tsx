@@ -32,9 +32,6 @@ export function CategoryExpenseBarChart({
           <h2 className="text-xl font-semibold text-slate-950">
             Uitgaven per categorie
           </h2>
-          <p className="mt-1 text-sm text-slate-600">
-            Vergelijk hoeveel er per categorie is uitgegeven.
-          </p>
         </div>
       </div>
 
