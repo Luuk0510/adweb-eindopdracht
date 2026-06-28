@@ -69,7 +69,11 @@ export function HouseholdBookMembersClient({
       return profile.uid === participantId;
     });
 
-    return participantProfile?.email ?? participantId;
+    return (
+      participantProfile?.email ??
+      book?.participantEmails[participantId] ??
+      "E-mailadres onbekend"
+    );
   }
 
   async function handleAddParticipant(event: SubmitEvent<HTMLFormElement>) {
@@ -87,12 +91,25 @@ export function HouseholdBookMembersClient({
         book.id,
         user.uid,
         participantProfile.uid,
+        participantProfile.email,
       );
+      const participantIds = book.participantIds.includes(participantProfile.uid)
+        ? book.participantIds
+        : [...book.participantIds, participantProfile.uid];
+
       setBook({
         ...book,
-        participantIds: [...book.participantIds, participantProfile.uid],
+        participantIds,
+        participantEmails: {
+          ...book.participantEmails,
+          [participantProfile.uid]: participantProfile.email,
+        },
       });
-      setParticipantProfiles([...participantProfiles, participantProfile]);
+      if (
+        !participantProfiles.some((profile) => profile.uid === participantProfile.uid)
+      ) {
+        setParticipantProfiles([...participantProfiles, participantProfile]);
+      }
       setParticipantEmail("");
       setMessage("Deelnemer toegevoegd.");
     } catch (error) {

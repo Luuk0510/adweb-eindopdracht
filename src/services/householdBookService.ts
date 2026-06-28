@@ -17,6 +17,17 @@ import { HouseholdBook } from "@/types/householdBook";
 
 const householdBooksCollection = collection(db, "householdBooks");
 
+function getParticipantEmails(data: DocumentData) {
+  if (
+    typeof data.participantEmails === "object" &&
+    data.participantEmails !== null
+  ) {
+    return data.participantEmails as Record<string, string>;
+  }
+
+  return {};
+}
+
 function handleSnapshotError(error: FirestoreError) {
   if (error.code === "permission-denied") {
     return;
@@ -35,6 +46,7 @@ function mapHouseholdBook(
     description: data.description ?? "",
     ownerId: data.ownerId ?? "",
     participantIds: data.participantIds ?? [],
+    participantEmails: getParticipantEmails(data),
     isArchived: data.isArchived ?? false,
     createdAt: data.createdAt?.toDate?.() ?? new Date(),
     updatedAt: data.updatedAt?.toDate?.() ?? new Date(),
@@ -135,6 +147,7 @@ export async function createHouseholdBook(
     description: getHouseholdBookText(description),
     ownerId: userId,
     participantIds: [],
+    participantEmails: {},
     isArchived: false,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
@@ -208,6 +221,7 @@ export async function archiveHouseholdBook(bookId: string, userId: string) {
 
   return updateDoc(bookReference, {
     participantIds: bookData.participantIds ?? [],
+    participantEmails: getParticipantEmails(bookData),
     isArchived: true,
     updatedAt: serverTimestamp(),
   });
@@ -222,6 +236,7 @@ export async function restoreHouseholdBook(bookId: string, userId: string) {
 
   return updateDoc(bookReference, {
     participantIds: bookData.participantIds ?? [],
+    participantEmails: getParticipantEmails(bookData),
     isArchived: false,
     updatedAt: serverTimestamp(),
   });
@@ -249,6 +264,7 @@ export async function updateHouseholdBook(
     name: bookName,
     description: getHouseholdBookText(description),
     participantIds: bookData.participantIds ?? [],
+    participantEmails: getParticipantEmails(bookData),
     updatedAt: serverTimestamp(),
   });
 }
@@ -257,6 +273,7 @@ export async function addHouseholdBookParticipant(
   bookId: string,
   ownerId: string,
   participantId: string,
+  participantEmail: string,
 ) {
   if (!participantId.trim()) {
     throw new Error("Gebruiker id is verplicht.");
@@ -269,18 +286,30 @@ export async function addHouseholdBookParticipant(
   );
 
   const participantIds = bookData.participantIds ?? [];
+  const participantEmails = getParticipantEmails(bookData);
   const newParticipantId = participantId.trim();
+  const newParticipantEmail = participantEmail.trim().toLowerCase();
 
   if (newParticipantId === ownerId) {
     throw new Error("De eigenaar hoeft niet toegevoegd te worden.");
   }
 
   if (participantIds.includes(newParticipantId)) {
-    throw new Error("Deze deelnemer is al toegevoegd.");
+    return updateDoc(bookReference, {
+      participantEmails: {
+        ...participantEmails,
+        [newParticipantId]: newParticipantEmail,
+      },
+      updatedAt: serverTimestamp(),
+    });
   }
 
   return updateDoc(bookReference, {
     participantIds: [...participantIds, newParticipantId],
+    participantEmails: {
+      ...participantEmails,
+      [newParticipantId]: newParticipantEmail,
+    },
     updatedAt: serverTimestamp(),
   });
 }

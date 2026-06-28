@@ -12,6 +12,7 @@ const book: HouseholdBook = {
   description: "Privé uitgaven",
   ownerId: "user-1",
   participantIds: [],
+  participantEmails: {},
   isArchived: false,
   createdAt: new Date("2026-06-01"),
   updatedAt: new Date("2026-06-01"),
