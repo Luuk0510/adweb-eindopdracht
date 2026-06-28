@@ -4,9 +4,9 @@ import { useEffect, useState } from "react";
 import { User } from "firebase/auth";
 import { HouseholdBook } from "@/types/householdBook";
 import {
-  listenToActiveHouseholdBooks,
-  listenToArchivedHouseholdBooks,
-  listenToParticipantHouseholdBooks,
+  getActiveHouseholdBooksObservable,
+  getArchivedHouseholdBooksObservable,
+  getParticipantHouseholdBooksObservable,
 } from "@/services/householdBookService";
 
 export function useHouseholdBooks(user: User | null) {
@@ -20,32 +20,36 @@ export function useHouseholdBooks(user: User | null) {
       return;
     }
 
-    const unsubscribeActiveBooks = listenToActiveHouseholdBooks(
+    const activeBooksSubscription = getActiveHouseholdBooksObservable(
       user.uid,
-      (newBooks) => {
+    ).subscribe({
+      next: (newBooks) => {
         setOwnerBooks(newBooks);
         setIsLoading(false);
       },
-    );
+      error: () => setIsLoading(false),
+    });
 
-    const unsubscribeArchivedBooks = listenToArchivedHouseholdBooks(
+    const archivedBooksSubscription = getArchivedHouseholdBooksObservable(
       user.uid,
-      (newArchivedBooks) => {
+    ).subscribe({
+      next: (newArchivedBooks) => {
         setArchivedBooks(newArchivedBooks);
       },
-    );
+    });
 
-    const unsubscribeParticipantBooks = listenToParticipantHouseholdBooks(
+    const participantBooksSubscription = getParticipantHouseholdBooksObservable(
       user.uid,
-      (participantBooks) => {
+    ).subscribe({
+      next: (participantBooks) => {
         setParticipantBooks(participantBooks);
       },
-    );
+    });
 
     return () => {
-      unsubscribeActiveBooks();
-      unsubscribeArchivedBooks();
-      unsubscribeParticipantBooks();
+      activeBooksSubscription.unsubscribe();
+      archivedBooksSubscription.unsubscribe();
+      participantBooksSubscription.unsubscribe();
     };
   }, [user]);
 

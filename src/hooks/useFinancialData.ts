@@ -2,8 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { User } from "firebase/auth";
-import { getCategoriesByHouseholdBookId } from "@/services/categoryService";
-import { getTransactionsByHouseholdBookId } from "@/services/transactionService";
+import { combineLatest } from "rxjs";
+import { getCategoriesObservable } from "@/services/categoryService";
+import {
+  getTransactionsByHouseholdBookId,
+  getTransactionsObservable,
+} from "@/services/transactionService";
 import { Category } from "@/types/category";
 import { Transaction } from "@/types/transaction";
 import {
@@ -27,23 +31,14 @@ export function useFinancialData(bookId: string, user: User | null) {
       return;
     }
 
-    const userId = user.uid;
-    let isMounted = true;
-
-    async function loadFinancialData() {
-      try {
-        const [fetchedTransactions, fetchedCategories] = await Promise.all([
-          getTransactionsByHouseholdBookId(bookId, userId),
-          getCategoriesByHouseholdBookId(bookId, userId),
-        ]);
-
-        if (!isMounted) {
-          return;
-        }
-
+    const subscription = combineLatest([
+      getTransactionsObservable(bookId),
+      getCategoriesObservable(bookId),
+    ]).subscribe({
+      next: ([fetchedTransactions, fetchedCategories]) => {
         setErrorMessage("");
-        setTransactions(fetchedTransactions ?? []);
-        setCategories(fetchedCategories ?? []);
+        setTransactions(fetchedTransactions);
+        setCategories(fetchedCategories);
 
         setSelectedMonth((currentMonth) => {
           if (currentMonth) {
@@ -54,11 +49,9 @@ export function useFinancialData(bookId: string, user: User | null) {
             ? getMonthKey(fetchedTransactions[0].date)
             : getMonthKey(new Date());
         });
-      } catch (error) {
-        if (!isMounted) {
-          return;
-        }
-
+        setIsLoading(false);
+      },
+      error: (error) => {
         if (
           error instanceof Error &&
           error.message === "Huishoudboekje niet gevonden."
@@ -68,17 +61,12 @@ export function useFinancialData(bookId: string, user: User | null) {
           setTransactions([]);
           setSelectedMonth(getMonthKey(new Date()));
         }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
-    }
-
-    void loadFinancialData();
+        setIsLoading(false);
+      },
+    });
 
     return () => {
-      isMounted = false;
+      subscription.unsubscribe();
     };
   }, [bookId, user]);
 
